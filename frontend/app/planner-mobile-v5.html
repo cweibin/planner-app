@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>时间管理 - 移动端原型 v5</title>
+  <style>
+    :root {
+      --bg: #f7f1f5;
+      --surface: #fffdfd;
+      --text: #2b2430;
+      --muted: #776b7f;
+      --accent: #b76e8a;
+      --accent-2: #7b8db8;
+      --success: #4e9f86;
+      --line: #6e5f74;
+      --radius: 22px;
+      --shadow: 0 10px 22px rgba(70, 48, 78, 0.16);
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 20px;
+      --font-title: 24px;
+      --font-subtitle: 17px;
+      --font-body: 14px;
+      --font-small: 12px;
+      --transition: all 0.2s ease;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 12%, #f7dfe8 0%, transparent 38%),
+        radial-gradient(circle at 88% 84%, #dbe6fb 0%, transparent 34%),
+        var(--bg);
+      color: var(--text);
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      min-height: 760px;
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: 34px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      animation: enter 0.45s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(16px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 0 var(--spacing-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--font-small);
+      font-weight: 700;
+      border-bottom: 1px solid rgba(110, 95, 116, 0.3);
+      background: repeating-linear-gradient(-45deg, #fffdfd, #fffdfd 8px, #f8f2f7 8px, #f8f2f7 16px);
+    }
+
+    .header {
+      padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+      border-bottom: 2px solid var(--line);
+      background: var(--surface);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(110, 95, 116, 0.3), transparent);
+    }
+
+    .title {
+      margin: 0;
+      font-size: var(--font-title);
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .content {
+      flex: 1;
+      padding: var(--spacing-lg);
+      overflow: auto;
+      position: relative;
+    }
+
+    .view {
+      display: none;
+      opacity: 0;
+      transform: translateX(12px);
+      transition: var(--transition);
+    }
+
+    .view.active {
+      display: block;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .card {
+      border: 1px solid rgba(110, 95, 116, 0.45);
+      border-radius: var(--radius);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow);
+      background: #fff;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: var(--radius) var(--radius) 0 0;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(70, 48, 78, 0.2);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, #faeef4 0%, #fffdfd 70%);
+      border-color: var(--accent);
+    }
+
+    .card.highlight::before {
+      opacity: 1;
+    }
+
+    .welcome-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: linear-gradient(135deg, #faeef4 40%, #e8ecff 100%);
+      border: 2px solid rgba(183, 110, 138, 0.3);
+    }
+
+    .welcome-text h3 {
+      margin: 0;
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .welcome-text p {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .progress-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0 68%, var(--line) 0 100%);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: 0 6px 12px rgba(183, 110, 138, 0.25);
+    }
+
+    .progress-ring::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      background: var(--surface);
+      border-radius: 50%;
+    }
+
+    .progress-ring span {
+      position: relative;
+      z-index: 1;
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .task-card {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: 16px;
+      background: #fff;
+      margin-bottom: var(--spacing-sm);
+      transition: var(--transition);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .task-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.15);
+    }
+
+    .task-card.completed {
+      background: #e8f6ef;
+      border-color: var(--success);
+    }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      border: 2px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: var(--font-small);
+      color: transparent;
+      transition: var(--transition);
+    }
+
+    .task-card.completed .task-check {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    .task-content {
+      flex: 1;
+    }
+
+    .task-title {
+      margin: 0 0 var(--spacing-xs);
+      font-size: var(--font-body);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .task-card.completed .task-title {
+      text-decoration: line-through;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .task-meta {
+      margin: 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .task-tag {
+      display: inline-block;
+      font-size: var(--font-small);
+      font-weight: 800;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #fff;
+      margin-top: var(--spacing-xs);
+      margin-right: var(--spacing-xs);
+    }
+
+    .task-tag.high {
+      background: #faeef4;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .task-tag.medium {
+      background: #e8ecff;
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+    }
+
+    .task-tag.low {
+      background: #e8f6ef;
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+      text-align: center;
+      font-size: var(--font-small);
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: var(--font-small);
+      font-weight: 800;
+      background: #fff;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      text-align: center;
+      padding-top: 6px;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .calendar-day.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.35);
+    }
+
+    .calendar-day .ratio {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .calendar-day.active .ratio {
+      color: #fff;
+    }
+
+    .week-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-sm);
+    }
+
+    .week-cell {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 6px;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: var(--font-small);
+      font-weight: 800;
+    }
+
+    .week-cell span {
+      display: block;
+      font-size: 10px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .week-cell.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.35);
+    }
+
+    .week-cell.active span {
+      color: #fff;
+    }
+
+    .habit-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: 16px;
+      background: #fff;
+      margin-bottom: var(--spacing-sm);
+      transition: var(--transition);
+    }
+
+    .habit-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .habit-info h4 {
+      margin: 0;
+      font-size: var(--font-body);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-info p {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .habit-check {
+      padding: 6px 16px;
+      border: 2px solid var(--accent);
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: var(--font-small);
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .habit-check:hover {
+      background: #fff;
+      color: var(--accent);
+    }
+
+    .habit-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-sm);
+    }
+
+    .habit-week span {
+      border-radius: 8px;
+      border: 2px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text);
+      aspect-ratio: 1;
+      background: #fff;
+    }
+
+    .habit-week span.checked {
+      border-color: var(--success);
+      background: var(--success);
+      color: #fff;
+    }
+
+    .chart-card {
+      padding: var(--spacing-lg);
+      background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: var(--radius);
+      margin-bottom: var(--spacing-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .chart-placeholder {
+      height: 120px;
+      display: grid;
+      place-items: center;
+      border: 2px dashed rgba(110, 95, 116, 0.3);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.5);
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .tabbar {
+      border-top: 3px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: #fff;
+      position: relative;
+    }
+
+    .tab {
+      border: 0;
+      background: #fff;
+      padding: 11px 6px 14px;
+      text-align: center;
+      font-size: var(--font-small);
+      font-weight: 800;
+      color: var(--muted);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .tab:hover { color: var(--accent); }
+
+    .tab.active {
+      color: var(--text);
+      background: #f8f2f7;
+    }
+
+    .tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 2px 2px;
+    }
+
+    .tab-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 28px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 24px rgba(183, 110, 138, 0.3);
+      transition: var(--transition);
+      z-index: 10;
+    }
+
+    .fab:hover {
+      transform: scale(1.1) rotate(90deg);
+      background: #fff;
+      color: var(--accent);
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(43, 36, 48, 0.36);
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .modal.show { display: flex; }
+
+    .dialog {
+      width: min(100%, 360px);
+      background: #fff;
+      border: 1px solid rgba(110, 95, 116, 0.5);
+      border-radius: 20px;
+      box-shadow: 0 18px 38px rgba(43, 36, 48, 0.2);
+      padding: var(--spacing-xl);
+      animation: dialog-enter 0.3s ease;
+    }
+
+    @keyframes dialog-enter {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .dialog h3 {
+      margin: 0 0 var(--spacing-md);
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .dialog-content {
+      font-size: var(--font-body);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+    }
+
+    .btn {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      font-weight: 800;
+      font-size: var(--font-body);
+      cursor: pointer;
+      background: #fff;
+      transition: var(--transition);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="时间管理移动端原型 v5">
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <span class="status-info">LTE · 92%</span>
+    </div>
+
+    <header class="header">
+      <h1 class="title">人生赢家 APP</h1>
+      <p class="subtitle">移动端 v5 · 对齐网页端体验</p>
+    </header>
+
+    <section class="content">
+      <section class="view active" id="view-home">
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h3>早上好！</h3>
+            <p id="current-date">2026-02-17 周三</p>
+          </div>
+          <div class="progress-ring">
+            <span id="progress-percent">68%</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+            <span style="font-size: var(--font-small); font-weight: 600; color: var(--muted);">选择日期：</span>
+            <input
+              id="date-picker"
+              type="date"
+              style="flex: 1; border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: var(--font-body); background: #fff; color: var(--text); font-family: inherit;"
+              value="2026-02-17"
+            />
+            <button
+              id="today-btn"
+              style="border: 2px solid var(--accent); border-radius: 12px; padding: 8px 16px; background: var(--accent); color: #fff; font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);"
+            >
+              今天
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <h3 style="margin: 0; font-size: var(--font-body); font-weight: 800;">今日任务</h3>
+            <span id="task-summary" style="font-size: var(--font-small); color: var(--muted); font-weight: 600;">3项任务</span>
+          </div>
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">客户续约方案确认</h4>
+              <p class="task-meta">截止 18:00 · 销售</p>
+              <span class="task-tag high">高优先级</span>
+            </div>
+          </div>
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">产品需求评审</h4>
+              <p class="task-meta">截止 21:00 · 产品</p>
+              <span class="task-tag medium">中优先级</span>
+            </div>
+          </div>
+          <div class="task-card">
+            <div class="task-check"></div>
+            <div class="task-content">
+              <h4 class="task-title">周报整理</h4>
+              <p class="task-meta">截止 22:30 · 个人</p>
+              <span class="task-tag low">低优先级</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card highlight">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">完成情况</h3>
+          <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-top: var(--spacing-sm);">
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: var(--font-small); font-weight: 600; color: var(--muted);">已完成</span>
+                <span id="completed-count" style="font-size: var(--font-small); font-weight: 800; color: var(--accent);">2/3</span>
+              </div>
+              <div style="height: 6px; background: #efe7ee; border-radius: 999px; overflow: hidden;">
+                <div id="completion-bar" style="width: 66%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: var(--transition);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <div class="card">
+          <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+            <span class="task-tag" style="background: var(--accent); color: #fff; border-color: var(--accent);">全部</span>
+            <span class="task-tag">进行中</span>
+            <span class="task-tag">已完成</span>
+          </div>
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">供应商会议纪要</h4>
+              <p class="task-meta" style="color: var(--accent);">截止 11:00 · 紧急</p>
+              <span class="task-tag high">高优先级</span>
+            </div>
+          </div>
+          <div class="task-card">
+            <div class="task-check"></div>
+            <div class="task-content">
+              <h4 class="task-title">周会材料准备</h4>
+              <p class="task-meta" style="color: var(--accent-2);">截止 16:00 · 即将</p>
+              <span class="task-tag medium">中优先级</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-calendar">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+              <select id="view-mode" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; font-size: var(--font-small); font-weight: 600; background: #fff; color: var(--text); font-family: inherit; cursor: pointer;">
+                <option value="month">月视图</option>
+                <option value="week">周视图</option>
+              </select>
+              <h3 id="calendar-title" style="margin: 0; font-size: var(--font-body); font-weight: 800;">2026年2月</h3>
+            </div>
+            <div style="display: flex; gap: var(--spacing-sm);">
+              <button id="prev-period" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; background: #fff; color: var(--text); font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">&lt;</button>
+              <button id="today-btn-cal" style="border: 2px solid var(--accent); border-radius: 12px; padding: 6px 12px; background: var(--accent); color: #fff; font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">今天</button>
+              <button id="next-period" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; background: #fff; color: var(--text); font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">&gt;</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="month-view">
+          <div class="calendar-header">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="calendar-grid">
+            <div class="calendar-day" data-date="2026-02-01" data-done="1" data-total="2">1<div class="ratio">1/2</div></div>
+            <div class="calendar-day" data-date="2026-02-02" data-done="2" data-total="2">2<div class="ratio">2/2</div></div>
+            <div class="calendar-day" data-date="2026-02-03" data-done="0" data-total="1">3<div class="ratio">0/1</div></div>
+            <div class="calendar-day" data-date="2026-02-04" data-done="1" data-total="1">4<div class="ratio">1/1</div></div>
+            <div class="calendar-day" data-date="2026-02-05" data-done="2" data-total="3">5<div class="ratio">2/3</div></div>
+            <div class="calendar-day" data-date="2026-02-06" data-done="1" data-total="2">6<div class="ratio">1/2</div></div>
+            <div class="calendar-day" data-date="2026-02-07" data-done="0" data-total="0">7<div class="ratio">0/0</div></div>
+
+            <div class="calendar-day" data-date="2026-02-08" data-done="2" data-total="2">8<div class="ratio">2/2</div></div>
+            <div class="calendar-day" data-date="2026-02-09" data-done="1" data-total="3">9<div class="ratio">1/3</div></div>
+            <div class="calendar-day" data-date="2026-02-10" data-done="3" data-total="3">10<div class="ratio">3/3</div></div>
+            <div class="calendar-day" data-date="2026-02-11" data-done="0" data-total="2">11<div class="ratio">0/2</div></div>
+            <div class="calendar-day" data-date="2026-02-12" data-done="1" data-total="1">12<div class="ratio">1/1</div></div>
+            <div class="calendar-day" data-date="2026-02-13" data-done="2" data-total="2">13<div class="ratio">2/2</div></div>
+            <div class="calendar-day" data-date="2026-02-14" data-done="1" data-total="2">14<div class="ratio">1/2</div></div>
+
+            <div class="calendar-day" data-date="2026-02-15" data-done="2" data-total="2">15<div class="ratio">2/2</div></div>
+            <div class="calendar-day active" data-date="2026-02-16" data-done="1" data-total="1">16<div class="ratio">1/1</div></div>
+            <div class="calendar-day" data-date="2026-02-17" data-done="3" data-total="3">17<div class="ratio">3/3</div></div>
+            <div class="calendar-day" data-date="2026-02-18" data-done="0" data-total="2">18<div class="ratio">0/2</div></div>
+            <div class="calendar-day" data-date="2026-02-19" data-done="1" data-total="1">19<div class="ratio">1/1</div></div>
+            <div class="calendar-day" data-date="2026-02-20" data-done="1" data-total="2">20<div class="ratio">1/2</div></div>
+            <div class="calendar-day" data-date="2026-02-21" data-done="0" data-total="0">21<div class="ratio">0/0</div></div>
+
+            <div class="calendar-day" data-date="2026-02-22" data-done="0" data-total="1">22<div class="ratio">0/1</div></div>
+            <div class="calendar-day" data-date="2026-02-23" data-done="2" data-total="2">23<div class="ratio">2/2</div></div>
+            <div class="calendar-day" data-date="2026-02-24" data-done="1" data-total="1">24<div class="ratio">1/1</div></div>
+            <div class="calendar-day" data-date="2026-02-25" data-done="0" data-total="3">25<div class="ratio">0/3</div></div>
+            <div class="calendar-day" data-date="2026-02-26" data-done="1" data-total="2">26<div class="ratio">1/2</div></div>
+            <div class="calendar-day" data-date="2026-02-27" data-done="2" data-total="2">27<div class="ratio">2/2</div></div>
+            <div class="calendar-day" data-date="2026-02-28" data-done="1" data-total="1">28<div class="ratio">1/1</div></div>
+          </div>
+          <div style="text-align: center; margin-top: var(--spacing-md); font-size: var(--font-small); color: var(--muted);">
+            <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-right: 4px;"></span>
+            已完成 / 总任务数
+          </div>
+        </div>
+
+        <div class="card" id="week-view" style="display: none;">
+          <div class="week-strip">
+            <div class="week-cell" data-date="2026-02-15" data-done="2" data-total="2">15<span>2/2</span></div>
+            <div class="week-cell active" data-date="2026-02-16" data-done="1" data-total="1">16<span>1/1</span></div>
+            <div class="week-cell" data-date="2026-02-17" data-done="3" data-total="3">17<span>3/3</span></div>
+            <div class="week-cell" data-date="2026-02-18" data-done="0" data-total="2">18<span>0/2</span></div>
+            <div class="week-cell" data-date="2026-02-19" data-done="1" data-total="1">19<span>1/1</span></div>
+            <div class="week-cell" data-date="2026-02-20" data-done="1" data-total="2">20<span>1/2</span></div>
+            <div class="week-cell" data-date="2026-02-21" data-done="0" data-total="0">21<span>0/0</span></div>
+          </div>
+          <div style="text-align: center; margin-top: var(--spacing-md); font-size: var(--font-small); color: var(--muted);">
+            点击日期查看当天任务完成情况
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-habits">
+        <div class="card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">近一周习惯追踪</h3>
+          <div class="habit-card">
+            <div class="habit-info">
+              <h4>每天阅读</h4>
+              <p>近一周完成 6/7 天</p>
+            </div>
+            <button class="habit-check">打卡</button>
+          </div>
+          <div class="habit-week">
+            <span class="checked">10</span>
+            <span class="checked">11</span>
+            <span class="checked">12</span>
+            <span class="checked">13</span>
+            <span class="checked">14</span>
+            <span class="checked">15</span>
+            <span>16</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--spacing-md);">
+          <div class="habit-card">
+            <div class="habit-info">
+              <h4>晨间拉伸</h4>
+              <p>近一周完成 5/7 天</p>
+            </div>
+            <button class="habit-check">打卡</button>
+          </div>
+          <div class="habit-week">
+            <span class="checked">10</span>
+            <span class="checked">11</span>
+            <span>12</span>
+            <span class="checked">13</span>
+            <span class="checked">14</span>
+            <span class="checked">15</span>
+            <span>16</span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">本周完成率</h3>
+          <div class="chart-placeholder">完成率 79%</div>
+        </div>
+      </section>
+
+      <section class="view" id="view-stats">
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">时间分布</h3>
+          <div class="chart-placeholder">饼图可视化</div>
+        </div>
+
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">任务完成趋势</h3>
+          <div class="chart-placeholder">折线图趋势</div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">本周成就</h3>
+          <p style="margin: 0; font-size: var(--font-small); color: var(--muted); font-weight: 600;">连续完成 5 天任务 · 效率提升 18%</p>
+        </div>
+      </section>
+    </section>
+
+    <nav class="tabbar">
+      <button class="tab active" data-view="home">
+        <span class="tab-icon">🏠</span>
+        <span>首页</span>
+      </button>
+      <button class="tab" data-view="tasks">
+        <span class="tab-icon">✓</span>
+        <span>任务</span>
+      </button>
+      <button class="tab" data-view="calendar">
+        <span class="tab-icon">📅</span>
+        <span>日历</span>
+      </button>
+      <button class="tab" data-view="habits">
+        <span class="tab-icon">🔥</span>
+        <span>习惯</span>
+      </button>
+      <button class="tab" data-view="stats">
+        <span class="tab-icon">📊</span>
+        <span>统计</span>
+      </button>
+    </nav>
+  </main>
+
+  <button class="fab" id="fabButton" aria-label="快速添加">+</button>
+
+  <div class="modal" id="taskModal" aria-hidden="true">
+    <div class="dialog">
+      <h3>任务详情</h3>
+      <p class="dialog-content">客户续约方案确认<br>截止时间：18:00<br>优先级：高</p>
+      <div class="dialog-actions">
+        <button class="btn" id="closeModal">关闭</button>
+        <button class="btn primary" id="editTask">编辑</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const views = document.querySelectorAll('.view');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const viewId = tab.getAttribute('data-view');
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+      });
+    });
+
+    const taskChecks = document.querySelectorAll('.task-check');
+    taskChecks.forEach(check => {
+      check.addEventListener('click', function() {
+        const taskCard = this.closest('.task-card');
+        taskCard.classList.toggle('completed');
+        this.textContent = taskCard.classList.contains('completed') ? '✓' : '';
+      });
+    });
+
+    const habitChecks = document.querySelectorAll('.habit-check');
+    habitChecks.forEach(button => {
+      button.addEventListener('click', function() {
+        const originalText = this.textContent;
+        this.textContent = '已打卡';
+        this.style.background = '#e8f6ef';
+        this.style.color = '#4e9f86';
+        this.style.borderColor = '#4e9f86';
+        setTimeout(() => {
+          this.textContent = originalText;
+          this.style.background = '';
+          this.style.color = '';
+          this.style.borderColor = '';
+        }, 1500);
+      });
+    });
+
+    const viewMode = document.getElementById('view-mode');
+    const monthView = document.getElementById('month-view');
+    const weekView = document.getElementById('week-view');
+    const calendarTitle = document.getElementById('calendar-title');
+
+    viewMode.addEventListener('change', function() {
+      const mode = this.value;
+      monthView.style.display = mode === 'month' ? 'block' : 'none';
+      weekView.style.display = mode === 'week' ? 'block' : 'none';
+      calendarTitle.textContent = mode === 'month' ? '2026年2月' : '2月15日 - 2月21日';
+    });
+
+    const datePicker = document.getElementById('date-picker');
+    const todayBtn = document.getElementById('today-btn');
+    const currentDateEl = document.getElementById('current-date');
+    const progressPercent = document.getElementById('progress-percent');
+    const taskSummary = document.getElementById('task-summary');
+    const completedCount = document.getElementById('completed-count');
+    const completionBar = document.getElementById('completion-bar');
+
+    function updateHomeDate(date, done = 2, total = 3) {
+      const d = new Date(date);
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const weekday = weekdays[d.getDay()];
+      currentDateEl.textContent = `${date} ${weekday}`;
+
+      const completion = total === 0 ? 0 : (done / total) * 100;
+      progressPercent.textContent = Math.round(completion) + '%';
+      taskSummary.textContent = total + '项任务';
+      completedCount.textContent = done + '/' + total;
+      completionBar.style.width = completion + '%';
+    }
+
+    datePicker.addEventListener('change', function() {
+      updateHomeDate(this.value);
+    });
+
+    todayBtn.addEventListener('click', function() {
+      const today = new Date().toISOString().split('T')[0];
+      datePicker.value = today;
+      updateHomeDate(today);
+    });
+
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    const weekCells = document.querySelectorAll('.week-cell');
+
+    function jumpToHome(date, done, total) {
+      datePicker.value = date;
+      updateHomeDate(date, done, total);
+      tabs.forEach(t => t.classList.remove('active'));
+      document.querySelector('[data-view="home"]').classList.add('active');
+      views.forEach(view => view.classList.remove('active'));
+      document.getElementById('view-home').classList.add('active');
+    }
+
+    calendarDays.forEach(day => {
+      day.addEventListener('click', function() {
+        calendarDays.forEach(d => d.classList.remove('active'));
+        day.classList.add('active');
+        const date = this.getAttribute('data-date');
+        const done = Number(this.getAttribute('data-done'));
+        const total = Number(this.getAttribute('data-total'));
+        if (date) jumpToHome(date, done, total);
+      });
+    });
+
+    weekCells.forEach(day => {
+      day.addEventListener('click', function() {
+        weekCells.forEach(d => d.classList.remove('active'));
+        day.classList.add('active');
+        const date = this.getAttribute('data-date');
+        const done = Number(this.getAttribute('data-done'));
+        const total = Number(this.getAttribute('data-total'));
+        if (date) jumpToHome(date, done, total);
+      });
+    });
+
+    const modal = document.getElementById('taskModal');
+    const fabButton = document.getElementById('fabButton');
+    const closeModalBtn = document.getElementById('closeModal');
+    const editTaskBtn = document.getElementById('editTask');
+    const taskCards = document.querySelectorAll('.task-card');
+
+    taskCards.forEach(card => {
+      card.addEventListener('click', function(event) {
+        if (!this.querySelector('.task-check').contains(event.target)) {
+          modal.classList.add('show');
+          modal.setAttribute('aria-hidden', 'false');
+        }
+      });
+    });
+
+    fabButton.addEventListener('click', () => {
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    });
+
+    function closeModal() {
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    closeModalBtn.addEventListener('click', closeModal);
+    editTaskBtn.addEventListener('click', () => {
+      alert('编辑功能开发中...');
+      closeModal();
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+    });
+
+    updateHomeDate('2026-02-17', 2, 3);
+  </script>
+</body>
+</html>

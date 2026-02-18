@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>时间管理 - 移动端原型</title>
+  <style>
+    :root {
+      --bg: #f7f1f5;
+      --surface: #fffdfd;
+      --text: #2b2430;
+      --muted: #776b7f;
+      --accent: #b76e8a;
+      --accent-2: #7b8db8;
+      --success: #4e9f86;
+      --line: #6e5f74;
+      --radius: 22px;
+      --shadow: 0 10px 22px rgba(70, 48, 78, 0.16);
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 20px;
+      --font-title: 24px;
+      --font-subtitle: 17px;
+      --font-body: 14px;
+      --font-small: 12px;
+      --transition: all 0.2s ease;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 12%, #f7dfe8 0%, transparent 38%),
+        radial-gradient(circle at 88% 84%, #dbe6fb 0%, transparent 34%),
+        var(--bg);
+      color: var(--text);
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      min-height: 760px;
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: 34px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      animation: enter 0.45s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(16px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ===== 顶部状态栏 ===== */
+    .status-bar {
+      height: 44px;
+      padding: 0 var(--spacing-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--font-small);
+      font-weight: 700;
+      border-bottom: 1px solid rgba(110, 95, 116, 0.3);
+      background: repeating-linear-gradient(-45deg, #fffdfd, #fffdfd 8px, #f8f2f7 8px, #f8f2f7 16px);
+    }
+
+    .status-time {
+      color: var(--text);
+    }
+
+    .status-info {
+      color: var(--muted);
+    }
+
+    /* ===== 页面头部 ===== */
+    .header {
+      padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+      border-bottom: 2px solid var(--line);
+      background: var(--surface);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(110, 95, 116, 0.3), transparent);
+    }
+
+    .title {
+      margin: 0;
+      font-size: var(--font-title);
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* ===== 主内容区 ===== */
+    .content {
+      flex: 1;
+      padding: var(--spacing-lg);
+      overflow: auto;
+      position: relative;
+    }
+
+    .view {
+      display: none;
+      opacity: 0;
+      transform: translateX(12px);
+      transition: var(--transition);
+    }
+    .view.active {
+      display: block;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ===== 卡片组件 ===== */
+    .card {
+      border: 1px solid rgba(110, 95, 116, 0.45);
+      border-radius: var(--radius);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow);
+      background: #fff;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: var(--radius) var(--radius) 0 0;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(70, 48, 78, 0.2);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, #faeef4 0%, #fffdfd 70%);
+      border-color: var(--accent);
+    }
+
+    .card.highlight::before {
+      opacity: 1;
+    }
+
+    /* ===== 欢迎区域 ===== */
+    .welcome-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: linear-gradient(135deg, #faeef4 40%, #e8ecff 100%);
+      border: 2px solid rgba(183, 110, 138, 0.3);
+    }
+
+    .welcome-text h3 {
+      margin: 0;
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .welcome-text p {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .progress-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0 68%, var(--line) 0 100%);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: 0 6px 12px rgba(183, 110, 138, 0.25);
+    }
+
+    .progress-ring::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      background: var(--surface);
+      border-radius: 50%;
+    }
+
+    .progress-ring span {
+      position: relative;
+      z-index: 1;
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===== 任务卡片 ===== */
+    .task-card {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: 16px;
+      background: #fff;
+      margin-bottom: var(--spacing-sm);
+      transition: var(--transition);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .task-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.15);
+    }
+
+    .task-card.completed {
+      background: #e8f6ef;
+      border-color: var(--success);
+    }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      border: 2px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: var(--font-small);
+      color: transparent;
+      transition: var(--transition);
+    }
+
+    .task-check:hover {
+      border-color: var(--accent);
+    }
+
+    .task-card.completed .task-check {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    .task-content {
+      flex: 1;
+    }
+
+    .task-title {
+      margin: 0 0 var(--spacing-xs);
+      font-size: var(--font-body);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .task-card.completed .task-title {
+      text-decoration: line-through;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .task-meta {
+      margin: 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .task-tag {
+      display: inline-block;
+      font-size: var(--font-small);
+      font-weight: 800;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #fff;
+      margin-top: var(--spacing-xs);
+      margin-right: var(--spacing-xs);
+    }
+
+    .task-tag.high {
+      background: #faeef4;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .task-tag.medium {
+      background: #e8ecff;
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+    }
+
+    .task-tag.low {
+      background: #e8f6ef;
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    /* ===== 日历视图 ===== */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: var(--font-small);
+      font-weight: 800;
+      background: #fff;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .calendar-day.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.35);
+    }
+
+    .calendar-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .calendar-day.active.has-event::after {
+      background: #fff;
+    }
+
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+      text-align: center;
+      font-size: var(--font-small);
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    /* ===== 习惯卡片 ===== */
+    .habit-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: 16px;
+      background: #fff;
+      margin-bottom: var(--spacing-sm);
+      transition: var(--transition);
+    }
+
+    .habit-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .habit-info h4 {
+      margin: 0;
+      font-size: var(--font-body);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-info p {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--font-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .habit-check {
+      padding: 6px 16px;
+      border: 2px solid var(--accent);
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: var(--font-small);
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .habit-check:hover {
+      background: #fff;
+      color: var(--accent);
+    }
+
+    /* ===== 统计图表 ===== */
+    .chart-card {
+      padding: var(--spacing-lg);
+      background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+      border: 2px solid rgba(110, 95, 116, 0.3);
+      border-radius: var(--radius);
+      margin-bottom: var(--spacing-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .chart-placeholder {
+      height: 120px;
+      display: grid;
+      place-items: center;
+      border: 2px dashed rgba(110, 95, 116, 0.3);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.5);
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    /* ===== 浮动按钮 ===== */
+    .fab {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 28px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 24px rgba(183, 110, 138, 0.3);
+      transition: var(--transition);
+      z-index: 10;
+    }
+
+    .fab:hover {
+      transform: scale(1.1) rotate(90deg);
+      background: #fff;
+      color: var(--accent);
+    }
+
+    /* ===== 底部导航 ===== */
+    .tabbar {
+      border-top: 3px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: #fff;
+      position: relative;
+    }
+
+    .tab {
+      border: 0;
+      background: #fff;
+      padding: 11px 6px 14px;
+      text-align: center;
+      font-size: var(--font-small);
+      font-weight: 800;
+      color: var(--muted);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .tab:hover {
+      color: var(--accent);
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: #f8f2f7;
+    }
+
+    .tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 2px 2px;
+    }
+
+    .tab-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    /* ===== 模态框 ===== */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(43, 36, 48, 0.36);
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .modal.show { display: flex; }
+
+    .dialog {
+      width: min(100%, 360px);
+      background: #fff;
+      border: 1px solid rgba(110, 95, 116, 0.5);
+      border-radius: 20px;
+      box-shadow: 0 18px 38px rgba(43, 36, 48, 0.2);
+      padding: var(--spacing-xl);
+      animation: dialog-enter 0.3s ease;
+    }
+
+    @keyframes dialog-enter {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .dialog h3 {
+      margin: 0 0 var(--spacing-md);
+      font-size: var(--font-subtitle);
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .dialog-content {
+      font-size: var(--font-body);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+    }
+
+    .btn {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      font-weight: 800;
+      font-size: var(--font-body);
+      cursor: pointer;
+      background: #fff;
+      transition: var(--transition);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(70, 48, 78, 0.15);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn.primary:hover {
+      background: #fff;
+      color: var(--accent);
+    }
+
+    /* ===== 搜索框 ===== */
+    .search-box {
+      position: relative;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .search-input {
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 12px 16px 12px 44px;
+      font-size: var(--font-body);
+      background: #fff;
+      transition: var(--transition);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(183, 110, 138, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="时间管理移动端原型">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <span class="status-info">LTE · 92%</span>
+    </div>
+
+    <!-- 页面头部 -->
+    <header class="header">
+      <h1 class="title">个人时间管理</h1>
+      <p class="subtitle">高效规划每一天</p>
+    </header>
+
+    <!-- 主内容区 -->
+    <section class="content">
+      <!-- 首页视图 -->
+      <section class="view active" id="view-home">
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h3>早上好！</h3>
+            <p id="current-date">2026-02-17 周三</p>
+          </div>
+          <div class="progress-ring">
+            <span id="progress-percent">68%</span>
+          </div>
+        </div>
+
+        <!-- 日期筛选器 -->
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+            <span style="font-size: var(--font-small); font-weight: 600; color: var(--text-secondary);">选择日期：</span>
+            <input
+              id="date-picker"
+              type="date"
+              style="
+                flex: 1;
+                border: 2px solid var(--line);
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: var(--font-body);
+                background: #fff;
+                color: var(--text);
+                font-family: inherit;
+              "
+              value="2026-02-17"
+            />
+            <button
+              id="today-btn"
+              style="
+                border: 2px solid var(--accent);
+                border-radius: 12px;
+                padding: 8px 16px;
+                background: var(--accent);
+                color: #fff;
+                font-size: var(--font-small);
+                font-weight: 800;
+                cursor: pointer;
+                transition: var(--transition);
+              "
+            >
+              今天
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <h3 style="margin: 0; font-size: var(--font-body); font-weight: 800;">今日任务</h3>
+            <span id="task-summary" style="font-size: var(--font-small); color: var(--muted); font-weight: 600;">3项任务</span>
+          </div>
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">客户续约方案确认</h4>
+              <p class="task-meta">截止 18:00 · 销售</p>
+              <span class="task-tag high">高优先级</span>
+            </div>
+          </div>
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">产品需求评审</h4>
+              <p class="task-meta">截止 21:00 · 产品</p>
+              <span class="task-tag medium">中优先级</span>
+            </div>
+          </div>
+          <div class="task-card">
+            <div class="task-check"></div>
+            <div class="task-content">
+              <h4 class="task-title">周报整理</h4>
+              <p class="task-meta">截止 22:30 · 个人</p>
+              <span class="task-tag low">低优先级</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card highlight">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">完成情况</h3>
+          <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-top: var(--spacing-sm);">
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: var(--font-small); font-weight: 600; color: var(--text-secondary);">已完成</span>
+                <span id="completed-count" style="font-size: var(--font-small); font-weight: 800; color: var(--accent);">2/3</span>
+              </div>
+              <div style="height: 6px; background: var(--color-gray-200); border-radius: 999px; overflow: hidden;">
+                <div id="completion-bar" style="width: 66%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: var(--transition);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 任务视图 -->
+      <section class="view" id="view-tasks">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" type="text" placeholder="搜索任务">
+        </div>
+
+        <div class="card">
+          <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+            <span class="task-tag active" style="background: var(--accent); color: #fff; border-color: var(--accent);">全部</span>
+            <span class="task-tag">进行中</span>
+            <span class="task-tag">已完成</span>
+          </div>
+
+          <div class="task-card">
+            <div class="task-check">✓</div>
+            <div class="task-content">
+              <h4 class="task-title">供应商会议纪要</h4>
+              <p class="task-meta" style="color: var(--accent);">截止 11:00 · 紧急</p>
+              <span class="task-tag high">高优先级</span>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-check"></div>
+            <div class="task-content">
+              <h4 class="task-title">周会材料准备</h4>
+              <p class="task-meta" style="color: var(--accent-2);">截止 16:00 · 即将</p>
+              <span class="task-tag medium">中优先级</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 日历视图 -->
+      <section class="view" id="view-calendar">
+        <!-- 视图切换和导航 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+              <select id="view-mode" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; font-size: var(--font-small); font-weight: 600; background: #fff; color: var(--text); font-family: inherit; cursor: pointer;">
+                <option value="month">月视图</option>
+                <option value="week">周视图</option>
+                <option value="day">日视图</option>
+              </select>
+              <h3 id="calendar-title" style="margin: 0; font-size: var(--font-body); font-weight: 800;">2026年2月</h3>
+            </div>
+            <div style="display: flex; gap: var(--spacing-sm);">
+              <button id="prev-period" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; background: #fff; color: var(--text); font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">
+                &lt;
+              </button>
+              <button id="today-btn-cal" style="border: 2px solid var(--accent); border-radius: 12px; padding: 6px 12px; background: var(--accent); color: #fff; font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">
+                今天
+              </button>
+              <button id="next-period" style="border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; background: #fff; color: var(--text); font-size: var(--font-small); font-weight: 800; cursor: pointer; transition: var(--transition);">
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 月视图 -->
+        <div class="card" id="month-view">
+          <div class="calendar-header">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+
+          <div class="calendar-grid">
+            <div class="calendar-day" data-date="2026-02-15">15
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">2/2</div>
+            </div>
+            <div class="calendar-day active" data-date="2026-02-16">16
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/1</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-17">17
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">3/3</div>
+            </div>
+            <div class="calendar-day has-event" data-date="2026-02-18">18
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">0/2</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-19">19
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/1</div>
+            </div>
+            <div class="calendar-day has-event" data-date="2026-02-20">20
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/2</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-21">21
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">0/0</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-22">22
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">0/1</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-23">23
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">2/2</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-24">24
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/1</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-25">25
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">0/3</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-26">26
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/2</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-27">27
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">2/2</div>
+            </div>
+            <div class="calendar-day" data-date="2026-02-28">28
+              <div style="font-size: 9px; color: var(--accent); font-weight: 800; margin-top: 2px;">1/1</div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: var(--spacing-md); font-size: var(--font-small); color: var(--muted);">
+            <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-right: 4px;"></span>
+            已完成 / 总任务数
+          </div>
+        </div>
+
+        <!-- 周视图 -->
+        <div class="card" id="week-view" style="display: none;">
+          <div style="display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 1px; background: var(--color-gray-200); border-radius: 12px; overflow: hidden;">
+            <!-- 时间列 -->
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">时间</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">15日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">16日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">17日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">18日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">19日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">20日</div>
+            <div style="background: #fff; padding: 8px; text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted);">21日</div>
+
+            <!-- 时间轴 -->
+            <div style="grid-row: span 8; display: flex; flex-direction: column; background: #fff;">
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">08:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">10:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">12:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">14:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">16:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">18:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">20:00</div>
+              <div style="padding: 4px; text-align: center; font-size: 10px; color: var(--muted); height: 40px;">22:00</div>
+            </div>
+
+            <!-- 日程内容 -->
+            <div style="background: #fff; position: relative; height: 320px;">
+              <div style="position: absolute; top: 40px; left: 2px; right: 2px; height: 40px; background: linear-gradient(135deg, #faeef4, #e8ecff); border-radius: 6px; border: 1px solid var(--accent); padding: 4px; font-size: 10px; color: var(--text);">
+                会议<br>9:00-10:00
+              </div>
+            </div>
+            <div style="background: #fff; position: relative; height: 320px;">
+              <div style="position: absolute; top: 120px; left: 2px; right: 2px; height: 40px; background: linear-gradient(135deg, #e8f6ef, #d1fae5); border-radius: 6px; border: 1px solid var(--success); padding: 4px; font-size: 10px; color: var(--text);">
+                接口联调<br>14:00-15:00
+              </div>
+            </div>
+            <!-- 其他天类似... -->
+          </div>
+        </div>
+
+        <!-- 日视图 -->
+        <div class="card" id="day-view" style="display: none;">
+          <div style="text-align: center; margin-bottom: var(--spacing-md);">
+            <h3 style="margin: 0; font-size: var(--font-body); font-weight: 800; color: var(--text);">2026年2月16日 周二</h3>
+            <p style="margin: 4px 0 0; font-size: var(--font-small); color: var(--muted); font-weight: 600;">已完成 1/1 项任务</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+            <div style="display: flex; align-items: flex-start; gap: var(--spacing-md); padding: var(--spacing-sm); border-radius: 12px; background: linear-gradient(135deg, #e8f6ef, #d1fae5); border: 1px solid var(--success);">
+              <div style="min-width: 60px; font-size: var(--font-small); font-weight: 800; color: var(--success);">14:00</div>
+              <div>
+                <h4 style="margin: 0; font-size: var(--font-body); font-weight: 700; color: var(--text);">接口联调</h4>
+                <p style="margin: 4px 0 0; font-size: var(--font-small); color: var(--muted);">与技术团队进行API对接</p>
+                <span class="task-tag high" style="margin-top: 4px;">已完成</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 习惯视图 -->
+      <section class="view" id="view-habits">
+        <!-- 周次导航 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <button id="prev-week" style="border: none; background: transparent; font-size: var(--font-small); color: var(--accent); font-weight: 800; cursor: pointer; padding: 4px 8px;">
+              ← 上一周
+            </button>
+            <span id="week-range" style="font-size: var(--font-small); font-weight: 800; color: var(--text);">2月10日 - 2月16日</span>
+            <button id="next-week" style="border: none; background: transparent; font-size: var(--font-small); color: var(--accent); font-weight: 800; cursor: pointer; padding: 4px 8px;">
+              下一周 →
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">习惯追踪</h3>
+
+          <!-- 习惯1: 每天阅读 -->
+          <div class="habit-card">
+            <div class="habit-info">
+              <h4>每天阅读</h4>
+              <p>连续 8 天</p>
+            </div>
+            <button class="habit-check">打卡</button>
+          </div>
+
+          <!-- 周打卡日历 -->
+          <div style="margin-top: var(--spacing-md);">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--spacing-xs); margin-bottom: var(--spacing-sm);">
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">日</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">一</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">二</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">三</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">四</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">五</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">六</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--spacing-xs);">
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">10</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">11</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">12</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">13</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">14</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">15</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--line); border-radius: 8px; background: #fff; display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: var(--text);">16</div>
+            </div>
+            <div style="text-align: center; margin-top: var(--spacing-sm); font-size: var(--font-small); color: var(--muted);">
+              <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-right: 4px;"></span>
+              已打卡 <span id="habit1-checked" style="font-weight: 800; color: var(--success);">6</span>/<span id="habit1-total">7</span> 天
+            </div>
+          </div>
+        </div>
+
+        <!-- 习惯2: 晨间拉伸 -->
+        <div class="card" style="margin-top: var(--spacing-md);">
+          <div class="habit-card">
+            <div class="habit-info">
+              <h4>晨间拉伸</h4>
+              <p>连续 5 天</p>
+            </div>
+            <button class="habit-check">打卡</button>
+          </div>
+
+          <!-- 周打卡日历 -->
+          <div style="margin-top: var(--spacing-md);">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--spacing-xs); margin-bottom: var(--spacing-sm);">
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">日</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">一</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">二</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">三</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">四</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">五</div>
+              <div style="text-align: center; font-size: var(--font-small); font-weight: 600; color: var(--muted); padding: 4px;">六</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--spacing-xs);">
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">10</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">11</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--line); border-radius: 8px; background: #fff; display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: var(--text);">12</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">13</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">14</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--success); border-radius: 8px; background: var(--success); display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: #fff;">15</div>
+              <div style="aspect-ratio: 1; border: 2px solid var(--line); border-radius: 8px; background: #fff; display: grid; place-items: center; font-size: var(--font-small); font-weight: 800; color: var(--text);">16</div>
+            </div>
+            <div style="text-align: center; margin-top: var(--spacing-sm); font-size: var(--font-small); color: var(--muted);">
+              <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-right: 4px;"></span>
+              已打卡 <span id="habit2-checked" style="font-weight: 800; color: var(--success);">5</span>/<span id="habit2-total">7</span> 天
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">本周完成率</h3>
+          <div class="chart-placeholder">完成率 79%</div>
+        </div>
+      </section>
+
+      <!-- 统计视图 -->
+      <section class="view" id="view-stats">
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">时间分布</h3>
+          <div class="chart-placeholder">饼图可视化</div>
+        </div>
+
+        <div class="chart-card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">任务完成趋势</h3>
+          <div class="chart-placeholder">折线图趋势</div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin: 0 0 var(--spacing-md); font-size: var(--font-body); font-weight: 800;">本周成就</h3>
+          <p style="margin: 0; font-size: var(--font-small); color: var(--muted); font-weight: 600;">连续完成 5 天任务 · 效率提升 18%</p>
+        </div>
+      </section>
+    </section>
+
+    <!-- 底部导航 -->
+    <nav class="tabbar">
+      <button class="tab active" data-view="home">
+        <span class="tab-icon">🏠</span>
+        <span>首页</span>
+      </button>
+      <button class="tab" data-view="tasks">
+        <span class="tab-icon">✓</span>
+        <span>任务</span>
+      </button>
+      <button class="tab" data-view="calendar">
+        <span class="tab-icon">📅</span>
+        <span>日历</span>
+      </button>
+      <button class="tab" data-view="habits">
+        <span class="tab-icon">🔥</span>
+        <span>习惯</span>
+      </button>
+      <button class="tab" data-view="stats">
+        <span class="tab-icon">📊</span>
+        <span>统计</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- 浮动按钮 -->
+  <button class="fab" id="fabButton" aria-label="快速添加">+</button>
+
+  <!-- 模态框 -->
+  <div class="modal" id="taskModal" aria-hidden="true">
+    <div class="dialog">
+      <h3>任务详情</h3>
+      <p class="dialog-content">客户续约方案确认<br>截止时间：18:00<br>优先级：高</p>
+      <div class="dialog-actions">
+        <button class="btn" id="closeModal">关闭</button>
+        <button class="btn primary" id="editTask">编辑</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 标签页切换功能
+    const tabs = document.querySelectorAll('.tab');
+    const views = document.querySelectorAll('.view');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const viewId = tab.getAttribute('data-view');
+
+        // 更新活跃标签
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // 切换视图
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+      });
+    });
+
+    // 任务勾选功能
+    const taskChecks = document.querySelectorAll('.task-check');
+    taskChecks.forEach(check => {
+      check.addEventListener('click', function() {
+        const taskCard = this.closest('.task-card');
+        taskCard.classList.toggle('completed');
+
+        if (taskCard.classList.contains('completed')) {
+          this.innerHTML = '✓';
+        } else {
+          this.innerHTML = '';
+        }
+      });
+    });
+
+    // 习惯打卡功能
+    const habitChecks = document.querySelectorAll('.habit-check');
+    habitChecks.forEach(button => {
+      button.addEventListener('click', function() {
+        const originalText = this.textContent;
+        this.textContent = '已打卡';
+        this.style.background = '#e8f6ef';
+        this.style.color = '#4e9f86';
+        this.style.borderColor = '#4e9f86';
+
+        setTimeout(() => {
+          this.textContent = originalText;
+          this.style.background = '';
+          this.style.color = '';
+          this.style.borderColor = '';
+        }, 1500);
+      });
+    });
+
+    // 日历日期选择
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    calendarDays.forEach(day => {
+      day.addEventListener('click', function() {
+        const date = this.getAttribute('data-date');
+        if (date) {
+          calendarDays.forEach(d => d.classList.remove('active'));
+          this.classList.add('active');
+
+          // 更新首页日期选择器
+          document.getElementById('date-picker').value = date;
+          updateHomeDate(date);
+
+          // 跳转到首页
+          tabs.forEach(t => t.classList.remove('active'));
+          document.querySelector('[data-view="home"]').classList.add('active');
+          document.querySelector('[data-view="home"]').classList.add('active');
+        }
+      });
+    });
+
+    // 视图切换功能
+    const viewMode = document.getElementById('view-mode');
+    const monthView = document.getElementById('month-view');
+    const weekView = document.getElementById('week-view');
+    const dayView = document.getElementById('day-view');
+    const calendarTitle = document.getElementById('calendar-title');
+
+    viewMode.addEventListener('change', function() {
+      const mode = this.value;
+      monthView.style.display = mode === 'month' ? 'block' : 'none';
+      weekView.style.display = mode === 'week' ? 'block' : 'none';
+      dayView.style.display = mode === 'day' ? 'block' : 'none';
+
+      if (mode === 'month') {
+        calendarTitle.textContent = '2026年2月';
+      } else if (mode === 'week') {
+        calendarTitle.textContent = '2月10日 - 2月16日';
+      } else {
+        calendarTitle.textContent = '2026年2月16日';
+      }
+    });
+
+    // 日历导航
+    const prevPeriod = document.getElementById('prev-period');
+    const nextPeriod = document.getElementById('next-period');
+    const todayBtnCal = document.getElementById('today-btn-cal');
+
+    prevPeriod.addEventListener('click', () => {
+      // 实现上一周期导航
+      const currentMode = viewMode.value;
+      // 简化实现 - 实际应更新日期数据
+      alert('导航到上一' + (currentMode === 'month' ? '月' : currentMode === 'week' ? '周' : '天'));
+    });
+
+    nextPeriod.addEventListener('click', () => {
+      // 实现下一周期导航
+      const currentMode = viewMode.value;
+      // 简化实现 - 实际应更新日期数据
+      alert('导航到下一' + (currentMode === 'month' ? '月' : currentMode === 'week' ? '周' : '天'));
+    });
+
+    todayBtnCal.addEventListener('click', () => {
+      // 回到今天
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('date-picker').value = today;
+      updateHomeDate(today);
+      alert('已回到今天：' + today);
+    });
+
+    // 习惯周次导航
+    const prevWeek = document.getElementById('prev-week');
+    const nextWeek = document.getElementById('next-week');
+    const weekRange = document.getElementById('week-range');
+
+    prevWeek.addEventListener('click', () => {
+      alert('导航到上一周');
+      // 实际应更新周次数据和打卡记录
+    });
+
+    nextWeek.addEventListener('click', () => {
+      alert('导航到下一周');
+      // 实际应更新周次数据和打卡记录
+    });
+
+    // 首页日期相关功能
+    const datePicker = document.getElementById('date-picker');
+    const todayBtn = document.getElementById('today-btn');
+    const currentDateEl = document.getElementById('current-date');
+    const progressPercent = document.getElementById('progress-percent');
+    const taskSummary = document.getElementById('task-summary');
+    const completedCount = document.getElementById('completed-count');
+    const completionBar = document.getElementById('completion-bar');
+
+    function updateHomeDate(date) {
+      const d = new Date(date);
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const weekday = weekdays[d.getDay()];
+      currentDateEl.textContent = `${date} ${weekday}`;
+
+      // 模拟根据日期更新任务数据
+      const dateNum = parseInt(date.split('-')[2]);
+      const completion = (dateNum % 3 + 1) / 3 * 100;
+      const completed = dateNum % 3 + 1;
+      const total = 3;
+
+      progressPercent.textContent = Math.round(completion) + '%';
+      taskSummary.textContent = total + '项任务';
+      completedCount.textContent = completed + '/' + total;
+      completionBar.style.width = completion + '%';
+    }
+
+    datePicker.addEventListener('change', function() {
+      updateHomeDate(this.value);
+    });
+
+    todayBtn.addEventListener('click', function() {
+      const today = new Date().toISOString().split('T')[0];
+      datePicker.value = today;
+      updateHomeDate(today);
+    });
+
+    // 初始化首页日期
+    updateHomeDate('2026-02-17');
+
+    // 模态框功能
+    const modal = document.getElementById('taskModal');
+    const fabButton = document.getElementById('fabButton');
+    const closeModalBtn = document.getElementById('closeModal');
+    const editTaskBtn = document.getElementById('editTask');
+    const taskCards = document.querySelectorAll('.task-card');
+
+    // 点击任务卡片打开模态框
+    taskCards.forEach(card => {
+      card.addEventListener('click', function() {
+        if (!this.querySelector('.task-check').contains(event.target)) {
+          modal.classList.add('show');
+          modal.setAttribute('aria-hidden', 'false');
+        }
+      });
+    });
+
+    // 点击FAB按钮
+    fabButton.addEventListener('click', () => {
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    });
+
+    // 关闭模态框
+    function closeModal() {
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    closeModalBtn.addEventListener('click', closeModal);
+    editTaskBtn.addEventListener('click', () => {
+      alert('编辑功能开发中...');
+      closeModal();
+    });
+
+    // 点击模态框外部关闭
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ESC键关闭模态框
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+    });
+
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', () => {
+      const phone = document.querySelector('.phone');
+      phone.style.animation = 'enter 0.45s ease';
+    });
+  </script>
+</body>
+</html>

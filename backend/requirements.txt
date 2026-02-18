@@ -1,0 +1,12 @@
+fastapi<0.110
+uvicorn[standard]
+sqlalchemy
+pydantic<2
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt<4
+python-dotenv
+apscheduler
+email-validator
+python-multipart
+pandas

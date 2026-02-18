@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planner UI - Style 4</title>
+  <style>
+    :root {
+      --bg: #f7f1f5;
+      --surface: #fffdfd;
+      --text: #2b2430;
+      --muted: #776b7f;
+      --accent: #b76e8a;
+      --accent-2: #7b8db8;
+      --ok: #4e9f86;
+      --line: #6e5f74;
+      --radius: 22px;
+      --shadow: 0 10px 22px rgba(70, 48, 78, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(circle at 12% 12%, #f7dfe8 0%, transparent 38%),
+        radial-gradient(circle at 88% 84%, #dbe6fb 0%, transparent 34%),
+        var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      min-height: 780px;
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: 34px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      animation: enter .45s ease;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(16px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .header {
+      padding: 18px 18px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--line);
+      background: repeating-linear-gradient(-45deg, #fffdfd, #fffdfd 8px, #f8f2f7 8px, #f8f2f7 16px);
+    }
+
+    .title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(70, 48, 78, 0.12);
+    }
+
+    .content {
+      flex: 1;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff;
+      cursor: pointer;
+      transition: transform .2s ease;
+    }
+
+    .day:hover { transform: translateY(-1px); }
+
+    .day.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 16px rgba(183, 110, 138, 0.35);
+    }
+
+    .card {
+      border: 1px solid rgba(110, 95, 116, 0.45);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      background: #fff;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, #faeef4 0%, #fffdfd 70%);
+    }
+
+    .task-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .check {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: var(--ok);
+      cursor: pointer;
+    }
+
+    .task-title {
+      margin: 0 0 6px;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .task-sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .done .task-title,
+    .done .task-sub {
+      text-decoration: line-through;
+      opacity: .6;
+    }
+
+    .tag-row {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 700;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: #fff;
+    }
+
+    .tag.blue { background: #e8ecff; }
+    .tag.green { background: #e8f6ef; }
+    .tag.pink { background: #ffe4ef; }
+
+    .progress-wrap {
+      margin-top: 10px;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      height: 12px;
+      background: #fff;
+    }
+
+    .progress {
+      width: 0;
+      height: 100%;
+      background: repeating-linear-gradient(90deg, var(--accent-2), var(--accent-2) 8px, #9eabd1 8px, #9eabd1 16px);
+      transition: width .3s ease;
+    }
+
+    .progress-text {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mini {
+      border: 3px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .mini b {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .mini span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .fab {
+      width: 100%;
+      border: 1px solid rgba(110, 95, 116, 0.5);
+      border-radius: 16px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 13px;
+      box-shadow: 0 12px 22px rgba(183, 110, 138, 0.28);
+      cursor: pointer;
+    }
+
+    .tabbar {
+      border-top: 3px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: #fff;
+    }
+
+    .tab {
+      border: 0;
+      background: #fff;
+      padding: 11px 6px 14px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: #f8f2f7;
+      border-top: 2px solid var(--accent);
+      padding-top: 9px;
+    }
+
+    .habit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .habit-btn {
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 700;
+      font-size: 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(43, 36, 48, 0.36);
+      padding: 20px;
+    }
+
+    .modal.show { display: flex; }
+
+    .dialog {
+      width: min(100%, 360px);
+      background: #fff;
+      border: 1px solid rgba(110, 95, 116, 0.5);
+      border-radius: 20px;
+      box-shadow: 0 18px 38px rgba(43, 36, 48, 0.2);
+      padding: 16px;
+    }
+
+    .dialog h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .field {
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      margin-bottom: 10px;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="planner-style-4">
+    <header class="header">
+      <h1 class="title" id="headerTitle">移动端总览</h1>
+      <span class="pill" id="datePill">2026-02-16</span>
+    </header>
+
+    <section class="content">
+      <section class="view active" id="view-home">
+        <article class="card highlight">
+          <h2 class="task-title">今日节奏</h2>
+          <p class="task-sub">完成 2 / 5 项任务 · 重点关注「战略协作」</p>
+          <div class="progress-wrap"><div class="progress" id="homeProgress"></div></div>
+          <p class="progress-text" id="homePercent">0%</p>
+        </article>
+        <article class="card">
+          <h2 class="task-title">优先任务</h2>
+          <div id="homeTaskList"></div>
+        </article>
+        <button class="fab" id="addTaskBtn">+ 添加今日任务</button>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <article class="card">
+          <h2 class="task-title">任务清单</h2>
+          <div id="taskList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-calendar">
+        <article class="card highlight">
+          <h2 class="task-title">本周节奏</h2>
+          <p class="task-sub">专注输出 · 周三评审 · 周五交付</p>
+        </article>
+        <div class="week" id="weekBar">
+          <button class="day">一</button>
+          <button class="day">二</button>
+          <button class="day active">三</button>
+          <button class="day">四</button>
+          <button class="day">五</button>
+          <button class="day">六</button>
+          <button class="day">日</button>
+        </div>
+        <article class="card">
+          <h2 class="task-title">今日任务安排</h2>
+          <p class="task-sub">09:30 需求澄清 · 14:00 方案评审 · 17:30 复盘</p>
+        </article>
+      </section>
+
+      <section class="view" id="view-habits">
+        <article class="card">
+          <h2 class="task-title">习惯追踪</h2>
+          <div class="habit-row">
+            <div>
+              <div style="font-weight: 800;">晨间阅读</div>
+              <div class="task-sub">连续 6 天 · 完成率 78%</div>
+            </div>
+            <button class="habit-btn">打卡</button>
+          </div>
+          <div class="habit-row" style="margin-top: 12px;">
+            <div>
+              <div style="font-weight: 800;">日间运动</div>
+              <div class="task-sub">连续 4 天 · 完成率 62%</div>
+            </div>
+            <button class="habit-btn">打卡</button>
+          </div>
+        </article>
+        <article class="card highlight">
+          <h2 class="task-title">本周习惯进度</h2>
+          <p class="task-sub">已完成 9 次 · 目标 12 次</p>
+          <div class="progress-wrap"><div class="progress" id="habitProgress"></div></div>
+          <p class="progress-text" id="habitPercent">0%</p>
+        </article>
+      </section>
+
+      <section class="view" id="view-stats">
+        <div class="stats">
+          <article class="mini"><b id="doneStat">0</b><span>已完成</span></article>
+          <article class="mini"><b id="todoStat">0</b><span>待处理</span></article>
+        </div>
+        <article class="card">
+          <h2 class="task-title">专注时间</h2>
+          <p class="task-sub">今日累计 3h 15m，效率 +12%</p>
+        </article>
+        <article class="card highlight">
+          <h2 class="task-title">本周成就</h2>
+          <p class="task-sub">连续 3 天按期完成高优先级任务</p>
+        </article>
+      </section>
+    </section>
+
+    <nav class="tabbar">
+      <button class="tab active" data-view="home">首页</button>
+      <button class="tab" data-view="tasks">任务</button>
+      <button class="tab" data-view="calendar">日历</button>
+      <button class="tab" data-view="habits">习惯</button>
+      <button class="tab" data-view="stats">统计</button>
+    </nav>
+  </main>
+
+  <div class="modal" id="taskModal" aria-hidden="true">
+    <div class="dialog">
+      <h3>新增任务</h3>
+      <input class="field" id="taskTitleInput" type="text" placeholder="例如：完成交付复盘" />
+      <input class="field" id="taskTimeInput" type="text" placeholder="例如：16:00 - 16:30" />
+      <div class="dialog-actions">
+        <button class="btn" id="cancelBtn">取消</button>
+        <button class="btn primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tasks = [
+      { title: "客户方案确认", time: "10:00 - 11:00 · 会议室 B1", done: false, tags: ["高优先级", "协作"] },
+      { title: "数据指标复盘", time: "13:30 - 14:10 · 数据面板", done: true, tags: ["复盘", "分析"] },
+      { title: "本周目标拆解", time: "17:00 - 17:30 · 计划", done: false, tags: ["规划", "输出"] }
+    ];
+
+    const taskList = document.getElementById("taskList");
+    const homeTaskList = document.getElementById("homeTaskList");
+    const doneStat = document.getElementById("doneStat");
+    const todoStat = document.getElementById("todoStat");
+    const homeProgress = document.getElementById("homeProgress");
+    const homePercent = document.getElementById("homePercent");
+    const habitProgress = document.getElementById("habitProgress");
+    const habitPercent = document.getElementById("habitPercent");
+
+    function renderTaskCards(target, list) {
+      target.innerHTML = "";
+      list.forEach((task, index) => {
+        const card = document.createElement("article");
+        card.className = "card" + (index === 0 ? " highlight" : "") + (task.done ? " done" : "");
+
+        const tagsHtml = task.tags.map((tag, i) => {
+          const style = i === 1 ? "blue" : i === 2 ? "green" : "pink";
+          return `<span class=\"tag ${style}\">${tag}</span>`;
+        }).join("");
+
+        card.innerHTML = `
+          <div class=\"task-row\">
+            <input class=\"check\" type=\"checkbox\" ${task.done ? "checked" : ""} data-index=\"${index}\" />
+            <div>
+              <h2 class=\"task-title\">${task.title}</h2>
+              <p class=\"task-sub\">${task.time}</p>
+              <div class=\"tag-row\">${tagsHtml}</div>
+            </div>
+          </div>
+        `;
+
+        target.appendChild(card);
+      });
+
+      target.querySelectorAll(".check").forEach((input) => {
+        input.addEventListener("change", (e) => {
+          const idx = Number(e.target.dataset.index);
+          tasks[idx].done = e.target.checked;
+          renderAll();
+        });
+      });
+    }
+
+    function syncProgress() {
+      const total = tasks.length;
+      const done = tasks.filter((t) => t.done).length;
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      doneStat.textContent = String(done);
+      todoStat.textContent = String(total - done);
+      homeProgress.style.width = `${percent}%`;
+      homePercent.textContent = `${percent}%`;
+
+      const habitPercentValue = 75;
+      habitProgress.style.width = `${habitPercentValue}%`;
+      habitPercent.textContent = `${habitPercentValue}%`;
+    }
+
+    function renderAll() {
+      renderTaskCards(taskList, tasks);
+      renderTaskCards(homeTaskList, tasks.slice(0, 2));
+      syncProgress();
+    }
+
+    const tabs = document.querySelectorAll(".tab");
+    const views = {
+      home: document.getElementById("view-home"),
+      tasks: document.getElementById("view-tasks"),
+      calendar: document.getElementById("view-calendar"),
+      habits: document.getElementById("view-habits"),
+      stats: document.getElementById("view-stats")
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        Object.values(views).forEach((view) => view.classList.remove("active"));
+        views[tab.dataset.view].classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".day").forEach((day) => {
+      day.addEventListener("click", () => {
+        document.querySelectorAll(".day").forEach((d) => d.classList.remove("active"));
+        day.classList.add("active");
+      });
+    });
+
+    const modal = document.getElementById("taskModal");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const titleInput = document.getElementById("taskTitleInput");
+    const timeInput = document.getElementById("taskTimeInput");
+
+    function openModal() {
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
+      titleInput.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+      modal.setAttribute("aria-hidden", "true");
+      titleInput.value = "";
+      timeInput.value = "";
+    }
+
+    addTaskBtn.addEventListener("click", openModal);
+    cancelBtn.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    saveBtn.addEventListener("click", () => {
+      const title = titleInput.value.trim();
+      const time = timeInput.value.trim();
+      if (!title) return;
+
+      tasks.unshift({
+        title,
+        time: time || "未设置时间",
+        done: false,
+        tags: ["新建", "待执行"]
+      });
+
+      renderAll();
+      closeModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("show")) closeModal();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

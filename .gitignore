@@ -1,0 +1,14 @@
+.DS_Store
+.vscode/
+.claude/
+*.bak
+
+backend/.venv/
+backend/planner.db
+backend/uvicorn.log
+
+frontend/web/node_modules/
+frontend/web/dist/
+
+frontend/mobile/node_modules/
+frontend/mobile/dist/

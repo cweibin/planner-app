@@ -1,0 +1,15 @@
+[Unit]
+Description=Planner App API
+After=network.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/planner-app/backend
+EnvironmentFile=/home/admin/planner-app/deploy/.env.prod
+ExecStart=/home/admin/planner-app/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

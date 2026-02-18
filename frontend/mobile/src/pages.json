@@ -1,0 +1,101 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "今日概况",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/tasks/index",
+      "style": {
+        "navigationBarTitleText": "任务",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/task-detail/index",
+      "style": {
+        "navigationBarTitleText": "任务详情",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/task-create/index",
+      "style": {
+        "navigationBarTitleText": "新增任务",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/habit-create/index",
+      "style": {
+        "navigationBarTitleText": "新增习惯",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/calendar/index",
+      "style": {
+        "navigationBarTitleText": "日历",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/habits/index",
+      "style": {
+        "navigationBarTitleText": "习惯",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/stats/index",
+      "style": {
+        "navigationBarTitleText": "统计",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    }
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#7a6b7f",
+    "selectedColor": "#b76e8a",
+    "backgroundColor": "#fffdfd",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/calendar/index",
+        "text": "日历"
+      },
+      {
+        "pagePath": "pages/habits/index",
+        "text": "习惯"
+      },
+      {
+        "pagePath": "pages/stats/index",
+        "text": "统计"
+      }
+    ]
+  }
+}
