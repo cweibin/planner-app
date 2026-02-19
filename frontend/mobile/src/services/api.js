@@ -1,6 +1,19 @@
+const H5_BASE_URL = '/api';
 const DEFAULT_BASE_URL = import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000/api';
 
+function isH5() {
+  // #ifdef H5
+  return true;
+  // #endif
+  // #ifndef H5
+  return false;
+  // #endif
+}
+
 export function getBaseUrl() {
+  if (isH5()) {
+    return H5_BASE_URL;
+  }
   return uni.getStorageSync('planner_api_base') || DEFAULT_BASE_URL;
 }
 
