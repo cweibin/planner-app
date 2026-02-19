@@ -42,7 +42,7 @@
           v-for="day in calendarDays"
           :key="day.key"
           class="calendar-day"
-          :class="{ active: day.date === selectedDate, today: day.isToday, empty: !day.isCurrentMonth }"
+          :class="{ active: day.date === selectedDate, today: day.isToday, full: day.isFullDone, empty: !day.isCurrentMonth }"
           @click="handleDaySelect(day)"
         >
           <template v-if="day.isCurrentMonth">
@@ -174,6 +174,7 @@ const calendarDays = computed(() => {
     const counts = getTaskStatusCountsForDate(dateStr);
     const isFuture = dateStr > todayStr;
     const completionBase = counts.todo + counts.inProgress + counts.done;
+    const isFullDone = !isFuture && completionBase > 0 && counts.done === completionBase;
     const ratioText = isFuture
       ? `待办 ${counts.todo}`
       : `${counts.done}/${completionBase}`;
@@ -182,6 +183,7 @@ const calendarDays = computed(() => {
       date: dateStr,
       day,
       ratioText,
+      isFullDone,
       isCurrentMonth: true,
       isToday: dateStr === todayStr,
     });
@@ -634,6 +636,15 @@ onShow(async () => {
   min-height: 44px;
 }
 
+.calendar-day.full {
+  background: #e8f7ef;
+  border-color: #b8e7cf;
+}
+
+.calendar-day.full .ratio {
+  color: var(--muted);
+}
+
 .calendar-day.empty {
   background: transparent;
   border-color: transparent;
@@ -643,6 +654,11 @@ onShow(async () => {
   border-color: #3b82f6;
   background: #dbeafe;
   font-weight: 700;
+}
+
+.calendar-day.full.active {
+  background: #e8f7ef;
+  border-color: #b8e7cf;
 }
 
 .calendar-day.today {

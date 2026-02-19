@@ -20,8 +20,8 @@
           <input class="input" v-model="registerEmail" placeholder="输入邮箱" />
         </view>
         <view class="form-field">
-          <text class="label">手机号</text>
-          <input class="input" v-model="registerPhone" placeholder="可选" />
+          <text class="label">手机号 *</text>
+          <input class="input" v-model="registerPhone" placeholder="请输入手机号" />
         </view>
         <view class="form-field">
           <text class="label">密码 *</text>
@@ -87,8 +87,8 @@ const handleLogin = async () => {
 };
 
 const handleRegister = async () => {
-  if (!registerEmail.value || !registerPassword.value || !registerConfirm.value) {
-    error.value = '请输入邮箱和密码';
+  if (!registerEmail.value || !registerPhone.value || !registerPassword.value || !registerConfirm.value) {
+    error.value = '请输入邮箱、手机号和密码';
     return;
   }
   if (registerPassword.value !== registerConfirm.value) {
