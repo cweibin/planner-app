@@ -163,6 +163,10 @@
           @touchcancel="onSwipeEnd(task)"
         >
           <view v-if="canSwipe(task)" class="swipe-actions">
+            <view class="swipe-btn view" @click.stop="openTask(task.id)">
+              <text class="swipe-icon">🔍</text>
+              <text class="swipe-text">查看</text>
+            </view>
             <view class="swipe-btn done" @click.stop="markDone(task)">
               <text class="swipe-icon">✓</text>
               <text class="swipe-text">完成</text>
@@ -176,7 +180,8 @@
             class="task-card"
             :class="{ overdue: task.isOverdue, swiping: swipingId === task.id }"
             :style="swipeStyle(task)"
-            @click="openTask(task.id)"
+            @touchend.stop="handleTaskTouchEnd($event, task)"
+            @click.stop="handleTaskClick(task)"
           >
             <view class="task-info">
               <text class="task-title">{{ task.title }}</text>
@@ -222,6 +227,10 @@
             @touchcancel="onSwipeEnd(task)"
           >
             <view v-if="canSwipe(task)" class="swipe-actions">
+              <view class="swipe-btn view" @click.stop="openTask(task.id)">
+                <text class="swipe-icon">🔍</text>
+                <text class="swipe-text">查看</text>
+              </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
                 <text class="swipe-text">完成</text>
@@ -235,7 +244,8 @@
               class="task-card"
               :class="{ overdue: task.isOverdue, swiping: swipingId === task.id }"
               :style="swipeStyle(task)"
-              @click="openTask(task.id)"
+              @touchend.stop="handleTaskTouchEnd($event, task)"
+              @click.stop="handleTaskClick(task)"
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
@@ -276,6 +286,10 @@
             @touchcancel="onSwipeEnd(task)"
           >
             <view v-if="canSwipe(task)" class="swipe-actions">
+              <view class="swipe-btn view" @click.stop="openTask(task.id)">
+                <text class="swipe-icon">🔍</text>
+                <text class="swipe-text">查看</text>
+              </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
                 <text class="swipe-text">完成</text>
@@ -289,7 +303,8 @@
               class="task-card"
               :class="{ overdue: task.isOverdue, swiping: swipingId === task.id }"
               :style="swipeStyle(task)"
-              @click="openTask(task.id)"
+              @touchend.stop="handleTaskTouchEnd($event, task)"
+              @click.stop="handleTaskClick(task)"
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
@@ -330,6 +345,10 @@
             @touchcancel="onSwipeEnd(task)"
           >
             <view v-if="canSwipe(task)" class="swipe-actions">
+              <view class="swipe-btn view" @click.stop="openTask(task.id)">
+                <text class="swipe-icon">🔍</text>
+                <text class="swipe-text">查看</text>
+              </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
                 <text class="swipe-text">完成</text>
@@ -343,7 +362,8 @@
               class="task-card"
               :class="{ overdue: task.isOverdue, swiping: swipingId === task.id }"
               :style="swipeStyle(task)"
-              @click="openTask(task.id)"
+              @touchend.stop="handleTaskTouchEnd($event, task)"
+              @click.stop="handleTaskClick(task)"
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
@@ -384,6 +404,10 @@
             @touchcancel="onSwipeEnd(task)"
           >
             <view v-if="canSwipe(task)" class="swipe-actions">
+              <view class="swipe-btn view" @click.stop="openTask(task.id)">
+                <text class="swipe-icon">🔍</text>
+                <text class="swipe-text">查看</text>
+              </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
                 <text class="swipe-text">完成</text>
@@ -397,7 +421,8 @@
               class="task-card"
               :class="{ overdue: task.isOverdue, swiping: swipingId === task.id }"
               :style="swipeStyle(task)"
-              @click="openTask(task.id)"
+              @touchend.stop="handleTaskTouchEnd($event, task)"
+              @click.stop="handleTaskClick(task)"
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
@@ -466,7 +491,9 @@ const swipeStartX = ref(0);
 const swipeStartY = ref(0);
 const swipeBaseX = ref(0);
 const swipeTranslateX = ref(0);
-const SWIPE_ACTION_WIDTH = 140;
+const SWIPE_ACTION_WIDTH = 240;
+const isDragging = ref(false);
+const lastTouchTime = ref(0);
 
 const parseDateString = (value) => {
   const parts = value.split('-').map((item) => Number(item));
@@ -869,6 +896,7 @@ const resetSwipe = () => {
   swipeOpenId.value = null;
   swipingId.value = null;
   swipeTranslateX.value = 0;
+  isDragging.value = false;
 };
 
 const onSwipeStart = (event, task) => {
@@ -879,6 +907,7 @@ const onSwipeStart = (event, task) => {
   if (swipeOpenId.value && swipeOpenId.value !== taskId) {
     swipeOpenId.value = null;
   }
+  isDragging.value = false;
   swipingId.value = taskId;
   swipeStartX.value = touch.clientX;
   swipeStartY.value = touch.clientY;
@@ -893,6 +922,9 @@ const onSwipeMove = (event, task) => {
   const deltaX = touch.clientX - swipeStartX.value;
   const deltaY = touch.clientY - swipeStartY.value;
   if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 4) return;
+  if (Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY)) {
+    isDragging.value = true;
+  }
   let next = swipeBaseX.value + deltaX;
   if (next > 0) next = 0;
   if (next < -SWIPE_ACTION_WIDTH) next = -SWIPE_ACTION_WIDTH;
@@ -915,6 +947,30 @@ const onSwipeEnd = (task) => {
   }
   swipingId.value = null;
   swipeTranslateX.value = 0;
+  setTimeout(() => {
+    isDragging.value = false;
+  }, 0);
+};
+
+const handleTaskTap = (task) => {
+  if (!task?.id) return;
+  if (isDragging.value) return;
+  if (swipeOpenId.value === task.id) {
+    resetSwipe();
+    return;
+  }
+  openTask(task.id);
+};
+
+const handleTaskTouchEnd = (_event, task) => {
+  lastTouchTime.value = Date.now();
+  handleTaskTap(task);
+};
+
+const handleTaskClick = (task) => {
+  const now = Date.now();
+  if (now - lastTouchTime.value < 400) return;
+  handleTaskTap(task);
 };
 
 const markDone = async (task) => {
@@ -1401,7 +1457,7 @@ onShow(async () => {
   align-items: stretch;
   justify-content: center;
   gap: 0;
-  width: 140px;
+  width: 240px;
   padding: 0;
   opacity: 0;
   transform: translateX(8px);
@@ -1446,6 +1502,10 @@ onShow(async () => {
 
 .swipe-btn.cancel {
   background: #f39a5a;
+}
+
+.swipe-btn.view {
+  background: #6fa9d8;
 }
 
 .task-card.overdue {
