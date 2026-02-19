@@ -12,3 +12,4 @@ frontend/web/dist/
 
 frontend/mobile/node_modules/
 frontend/mobile/dist/
+deploy/artifacts/
