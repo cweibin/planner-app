@@ -1,0 +1,1 @@
+"use strict";const t=require("./api.js");exports.fetchTimeStats=async function(s=7){return t.request({path:"/statistics/time",params:{days:s}})},exports.fetchTrends=async function(s=7){return t.request({path:"/statistics/trends",params:{days:s}})};

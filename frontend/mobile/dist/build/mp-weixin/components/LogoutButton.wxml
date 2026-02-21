@@ -1,0 +1,1 @@
+<view class="logout-btn data-v-b404b6c8" bindtap="{{a}}"><text class="logout-icon data-v-b404b6c8">⎋</text></view>

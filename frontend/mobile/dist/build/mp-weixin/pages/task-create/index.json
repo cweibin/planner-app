@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "新增任务",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "prompt-dialog": "../../components/PromptDialog",
+    "logout-button": "../../components/LogoutButton"
+  }
+}

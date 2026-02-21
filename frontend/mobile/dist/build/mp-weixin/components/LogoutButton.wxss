@@ -1,0 +1,1 @@
+.logout-btn.data-v-b404b6c8{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 6px);width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;z-index:1001;box-shadow:var(--shadow)}.logout-icon.data-v-b404b6c8{font-size:14px;font-weight:700;color:var(--text);line-height:1}

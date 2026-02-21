@@ -1,0 +1,39 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/home/index",
+    "pages/tasks/index",
+    "pages/task-detail/index",
+    "pages/task-create/index",
+    "pages/habit-create/index",
+    "pages/calendar/index",
+    "pages/habits/index",
+    "pages/stats/index"
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#7a6b7f",
+    "selectedColor": "#b76e8a",
+    "backgroundColor": "#fffdfd",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/calendar/index",
+        "text": "日历"
+      },
+      {
+        "pagePath": "pages/habits/index",
+        "text": "习惯"
+      },
+      {
+        "pagePath": "pages/stats/index",
+        "text": "统计"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

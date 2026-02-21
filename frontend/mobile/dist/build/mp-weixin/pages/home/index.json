@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "今日概况",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "logout-button": "../../components/LogoutButton",
+    "prompt-dialog": "../../components/PromptDialog",
+    "floating-add-button": "../../components/FloatingAddButton"
+  }
+}

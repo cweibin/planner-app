@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "新增习惯",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "logout-button": "../../components/LogoutButton"
+  }
+}

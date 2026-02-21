@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "日历",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "logout-button": "../../components/LogoutButton",
+    "prompt-dialog": "../../components/PromptDialog",
+    "floating-add-button": "../../components/FloatingAddButton"
+  }
+}

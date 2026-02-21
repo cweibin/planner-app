@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "统计",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "logout-button": "../../components/LogoutButton",
+    "floating-add-button": "../../components/FloatingAddButton"
+  }
+}

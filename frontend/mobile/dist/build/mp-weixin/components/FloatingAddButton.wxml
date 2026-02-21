@@ -1,0 +1,1 @@
+<view class="{{['fab', 'data-v-b80795f1', a && 'hidden']}}" bindtap="{{b}}"><text class="fab-icon data-v-b80795f1">+</text></view>

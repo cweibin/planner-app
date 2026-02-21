@@ -1,0 +1,1 @@
+import{r as t}from"./auth.D0FsZTc9.js";async function a(){return t({path:"/categories"})}async function e(a){return t({path:"/categories",method:"POST",data:a})}async function n(a,e){return t({path:`/categories/${a}`,method:"PUT",data:e})}async function r(a){return t({path:`/categories/${a}`,method:"DELETE"})}export{e as c,r as d,a as f,n as u};

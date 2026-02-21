@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "任务",
+  "navigationBarBackgroundColor": "#fffdfd",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "logout-button": "../../components/LogoutButton"
+  }
+}
