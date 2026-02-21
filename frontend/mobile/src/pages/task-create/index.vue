@@ -85,14 +85,22 @@
         </button>
       </view>
     </view>
+    <PromptDialog
+      v-model:visible="promptVisible"
+      :title="promptTitle"
+      :placeholder="promptPlaceholder"
+      :value="promptValue"
+      @confirm="handlePromptConfirm"
+    />
   </view>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { ensureAuth, getRoleId, setRoleId } from '../../utils/auth';
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../../services/categories';
+import PromptDialog from '../../components/PromptDialog.vue';
 import { fetchRoles } from '../../services/roles';
 import { createTask } from '../../services/tasks';
 import { formatDate } from '../../utils/date';
@@ -120,6 +128,12 @@ const selectedCategoryIndex = ref(0);
 
 const roleOptions = ref([{ label: '全部', value: null }]);
 const selectedRoleIndex = ref(0);
+const promptVisible = ref(false);
+const promptTitle = ref('');
+const promptPlaceholder = ref('');
+const promptValue = ref('');
+const promptType = ref('');
+const voiceDraft = ref(null);
 
 const priorityLabel = computed(() => priorityOptions[selectedPriorityIndex.value]?.label ?? '中');
 const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? '未分类');
@@ -177,25 +191,16 @@ const openCategoryManager = () => {
   });
 };
 
+const openPrompt = (type, title, placeholder, value = '') => {
+  promptType.value = type;
+  promptTitle.value = title;
+  promptPlaceholder.value = placeholder;
+  promptValue.value = value;
+  promptVisible.value = true;
+};
+
 const handleCreateCategory = () => {
-  uni.showModal({
-    title: '新增分类',
-    editable: true,
-    placeholderText: '请输入分类名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await createCategory({ name });
-        await loadCategories();
-        const idx = categoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) selectedCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '新增失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-create', '新增分类', '请输入分类名称');
 };
 
 const handleRenameCategory = () => {
@@ -204,24 +209,7 @@ const handleRenameCategory = () => {
     uni.showToast({ title: '请选择要重命名的分类', icon: 'none' });
     return;
   }
-  uni.showModal({
-    title: '重命名分类',
-    editable: true,
-    placeholderText: '请输入新名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await updateCategory(current.value, { name });
-        await loadCategories();
-        const idx = categoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) selectedCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '重命名失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-rename', '重命名分类', '请输入新名称', current.label);
 };
 
 const handleDeleteCategory = () => {
@@ -244,6 +232,34 @@ const handleDeleteCategory = () => {
       }
     },
   });
+};
+
+const handlePromptConfirm = async (value) => {
+  const name = (value || '').trim();
+  if (!name) return;
+  if (promptType.value === 'category-create') {
+    try {
+      await createCategory({ name });
+      await loadCategories();
+      const idx = categoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) selectedCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: '新增失败', icon: 'none' });
+    }
+  }
+  if (promptType.value === 'category-rename') {
+    const current = categoryOptions.value[selectedCategoryIndex.value];
+    if (!current || current.value === null) return;
+    try {
+      await updateCategory(current.value, { name });
+      await loadCategories();
+      const idx = categoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) selectedCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: '重命名失败', icon: 'none' });
+    }
+  }
+  promptType.value = '';
 };
 
 const onRoleChange = (event) => {
@@ -282,6 +298,43 @@ const buildDefaultDates = () => {
   const today = formatDate(new Date());
   startDate.value = today;
   dueDate.value = today;
+};
+
+const extractDateTimeParts = (value) => {
+  if (!value) return { date: '', time: '' };
+  const normalized = String(value).replace(' ', 'T');
+  const [datePart, timePart] = normalized.split('T');
+  const time = timePart ? timePart.slice(0, 5) : '';
+  return { date: datePart || '', time };
+};
+
+const applyVoiceDraft = (draft) => {
+  if (!draft) return;
+  title.value = draft.title || '';
+  description.value = draft.description || '';
+  if (draft.priority) {
+    const idx = priorityOptions.findIndex((item) => item.value === draft.priority);
+    if (idx >= 0) selectedPriorityIndex.value = idx;
+  }
+  if (draft.start_date) {
+    const { date, time } = extractDateTimeParts(draft.start_date);
+    if (date) startDate.value = date;
+    if (time) startTime.value = time;
+  }
+  if (draft.due_date) {
+    const { date, time } = extractDateTimeParts(draft.due_date);
+    if (date) dueDate.value = date;
+    if (time) dueTime.value = time;
+  }
+  if (draft.role_id) {
+    const idx = roleOptions.value.findIndex((item) => item.value === draft.role_id);
+    if (idx >= 0) selectedRoleIndex.value = idx;
+    setRoleId(draft.role_id);
+  }
+  if (draft.category_id) {
+    const idx = categoryOptions.value.findIndex((item) => item.value === draft.category_id);
+    if (idx >= 0) selectedCategoryIndex.value = idx;
+  }
 };
 
 const submit = async () => {
@@ -362,11 +415,23 @@ const loadRoles = async () => {
   }
 };
 
+onLoad(() => {
+  const stored = uni.getStorageSync('voiceDraft');
+  if (stored) {
+    voiceDraft.value = stored;
+    uni.removeStorageSync('voiceDraft');
+  }
+});
+
 onShow(async () => {
   if (!ensureAuth()) return;
   buildDefaultDates();
   await loadRoles();
   await loadCategories();
+  if (voiceDraft.value) {
+    applyVoiceDraft(voiceDraft.value);
+    voiceDraft.value = null;
+  }
 });
 </script>
 

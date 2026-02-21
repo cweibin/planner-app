@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import {
   BoardColumns,
   BoardFilterParams,
@@ -13,9 +10,7 @@ import {
 } from '../services/tasks';
 import { Category } from '../services/categories';
 import { Role } from '../services/roles';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatBeijing, formatBeijingFromUtc, nowBeijing, toBeijing, toBeijingFromUtc } from '../utils/time';
 
 const STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done', 'cancelled'];
 
@@ -54,8 +49,12 @@ const sortTasks = (tasks: Task[]) =>
   [...tasks].sort((a, b) => {
     const priorityDiff = PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
     if (priorityDiff !== 0) return priorityDiff;
-    const aDue = a.due_date ? dayjs(a.due_date).valueOf() : Number.POSITIVE_INFINITY;
-    const bDue = b.due_date ? dayjs(b.due_date).valueOf() : Number.POSITIVE_INFINITY;
+    const aDue = a.due_date
+      ? toBeijing(a.due_date)?.valueOf() ?? Number.POSITIVE_INFINITY
+      : Number.POSITIVE_INFINITY;
+    const bDue = b.due_date
+      ? toBeijing(b.due_date)?.valueOf() ?? Number.POSITIVE_INFINITY
+      : Number.POSITIVE_INFINITY;
     return aDue - bDue;
   });
 
@@ -110,7 +109,10 @@ export const TaskBoardSection: React.FC<Props> = ({
 }) => {
   const [columns, setColumns] = useState<BoardColumns | null>(null);
   const [draggedTask, setDraggedTask] = useState<{ task: Task; from: TaskStatus } | null>(null);
-  const isPastSelection = !!dueTo && dayjs(dueTo).isBefore(dayjs());
+  const isPastSelection = !!dueTo && (() => {
+    const target = toBeijing(dueTo);
+    return target ? target.isBefore(nowBeijing()) : false;
+  })();
   const statusLabels = { ...STATUS_LABEL, ...statusLabelOverrides };
   const requestKey = [
     dueFrom ?? '',
@@ -122,8 +124,7 @@ export const TaskBoardSection: React.FC<Props> = ({
     refreshKey ?? '',
   ].join('|');
 
-  const formatBeijingTime = (value?: string | null) =>
-    value ? dayjs(value).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm') : '';
+  const formatBeijingTime = (value?: string | null) => formatBeijing(value);
 
   useEffect(() => {
     const load = async () => {
@@ -228,15 +229,17 @@ export const TaskBoardSection: React.FC<Props> = ({
       options.status === 'done' &&
       !!task.completed_at &&
       !!task.due_date &&
-      dayjs(task.completed_at).isAfter(dayjs(task.due_date));
+      !!toBeijingFromUtc(task.completed_at) &&
+      !!toBeijing(task.due_date) &&
+      toBeijingFromUtc(task.completed_at)!.isAfter(toBeijing(task.due_date)!);
     const statusTimeLabel =
       options.status === 'done'
         ? statusTime
-          ? `完成 ${formatBeijingTime(statusTime)}`
+          ? `完成 ${formatBeijingFromUtc(statusTime)}`
           : '完成时间未记录'
         : options.status === 'cancelled'
         ? statusTime
-          ? `取消 ${formatBeijingTime(statusTime)}`
+          ? `取消 ${formatBeijingFromUtc(statusTime)}`
           : '取消时间未记录'
         : task.due_date
         ? `截止 ${formatBeijingTime(task.due_date)}`
@@ -462,7 +465,10 @@ export const TaskBoardSection: React.FC<Props> = ({
                   const isOverdue =
                     (status === 'in_progress' || status === 'todo') &&
                     !!task.due_date &&
-                    dayjs(task.due_date).isBefore(dayjs());
+                    (() => {
+                      const due = toBeijing(task.due_date);
+                      return due ? due.isBefore(nowBeijing()) : false;
+                    })();
                   const showOverdueIcon = isOverdue && isPastSelection;
                   return renderTaskCard(task, {
                     status,

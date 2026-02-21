@@ -52,6 +52,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { login, register } from '../../services/auth';
 import { setRoleId } from '../../utils/auth';
 import { getToken } from '../../services/api';
+import { isBeijingTimezone } from '../../utils/date';
 
 const mode = ref('login');
 const loginUsername = ref('');
@@ -66,6 +67,9 @@ const error = ref('');
 const afterLogin = async () => {
   setRoleId(null);
   uni.removeStorageSync('planner_role_prompted');
+  if (!isBeijingTimezone()) {
+    uni.showToast({ title: '当前系统时区非北京时间，已按北京时间展示', icon: 'none' });
+  }
   uni.reLaunch({ url: '/pages/home/index' });
 };
 

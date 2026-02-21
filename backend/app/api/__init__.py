@@ -13,6 +13,7 @@ from . import (
     categories,
     roles,
     export,
+    voice,
 )
 
 
@@ -29,3 +30,4 @@ api_router.include_router(reminder_settings.router)
 api_router.include_router(categories.router)
 api_router.include_router(roles.router)
 api_router.include_router(export.router)
+api_router.include_router(voice.router)

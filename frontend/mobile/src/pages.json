@@ -41,6 +41,14 @@
       }
     },
     {
+      "path": "pages/voice-create/index",
+      "style": {
+        "navigationBarTitleText": "语音新建",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
       "path": "pages/habit-create/index",
       "style": {
         "navigationBarTitleText": "新增习惯",

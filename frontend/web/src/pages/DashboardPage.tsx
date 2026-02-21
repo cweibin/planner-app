@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import dayjs from 'dayjs';
+import { formatBeijingDate, nowBeijing, toBeijing } from '../utils/time';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Task,
@@ -15,6 +15,7 @@ import { Role } from '../services/roles';
 import { SubTask, fetchSubtasks } from '../services/subtasks';
 import { NewTaskPage } from './NewTaskPage';
 import { DatePicker } from '../components/DatePicker';
+import { VoiceTaskInput } from '../components/VoiceTaskInput';
 
 interface DashboardPageProps {
   roles: Role[];
@@ -32,8 +33,8 @@ const sortTasks = (list: Task[]) =>
   [...list].sort((a, b) => {
     const priorityDiff = PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
     if (priorityDiff !== 0) return priorityDiff;
-    const aDue = a.due_date ? dayjs(a.due_date).valueOf() : Number.POSITIVE_INFINITY;
-    const bDue = b.due_date ? dayjs(b.due_date).valueOf() : Number.POSITIVE_INFINITY;
+    const aDue = a.due_date ? toBeijing(a.due_date)?.valueOf() ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+    const bDue = b.due_date ? toBeijing(b.due_date)?.valueOf() ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
     return aDue - bDue;
   });
 
@@ -59,10 +60,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const selectedDate = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const dateParam = params.get('date');
-    if (dateParam && dayjs(dateParam).isValid()) {
-      return dayjs(dateParam).format('YYYY-MM-DD');
+    if (dateParam) {
+      const parsed = toBeijing(dateParam);
+      if (parsed && parsed.isValid()) {
+        return formatBeijingDate(dateParam);
+      }
     }
-    return dayjs().format('YYYY-MM-DD');
+    return nowBeijing().format('YYYY-MM-DD');
   }, [location.search]);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -130,10 +134,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         ),
       ]);
       const merged = [...todoTasks, ...inProgressTasks];
-      const todayStart = dayjs(selectedDate).startOf('day');
+      const todayStart = toBeijing(selectedDate)?.startOf('day');
       const filtered = merged.filter((task) => {
         if (task.due_date) {
-          return dayjs(task.due_date).isBefore(todayStart);
+          const due = toBeijing(task.due_date);
+          return !!todayStart && !!due && due.isBefore(todayStart);
         }
         return false;
       });
@@ -213,7 +218,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const requestCompletionTime = useCallback(
     (task: Task) =>
       new Promise<string | null>((resolve) => {
-        setCompletionTime(dayjs().format('YYYY-MM-DDTHH:mm'));
+        setCompletionTime(nowBeijing().format('YYYY-MM-DDTHH:mm'));
         setCompletionPrompt({ task, resolve });
       }),
     [],
@@ -221,13 +226,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const handleConfirmCompletion = () => {
     if (!completionPrompt) return;
-    const selected = completionTime || dayjs().format('YYYY-MM-DDTHH:mm');
-    const selectedTime = dayjs(selected);
-    if (!selectedTime.isValid()) {
+    const selected = completionTime || nowBeijing().format('YYYY-MM-DDTHH:mm');
+    const selectedTime = toBeijing(selected);
+    if (!selectedTime || !selectedTime.isValid()) {
       window.alert('请选择有效的完成时间');
       return;
     }
-    if (selectedTime.isAfter(dayjs())) {
+    if (selectedTime.isAfter(nowBeijing())) {
       window.alert('完成时间不能晚于当前时间');
       return;
     }
@@ -255,7 +260,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       await loadYesterdayRemainingTasks();
       refreshBoard();
       if (shouldJump) {
-        const completionDate = dayjs(completedAt).format('YYYY-MM-DD');
+        const completionDate = formatBeijingDate(completedAt);
         handleDateChange(completionDate);
       }
     } catch {
@@ -279,21 +284,27 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <button
             className="button secondary"
             style={quickButtonStyle}
-            onClick={() => handleDateChange(dayjs(selectedDate).subtract(1, 'day').format('YYYY-MM-DD'))}
+            onClick={() => {
+              const next = toBeijing(selectedDate)?.subtract(1, 'day').format('YYYY-MM-DD');
+              if (next) handleDateChange(next);
+            }}
           >
             前一天
           </button>
           <button
             className="button secondary"
             style={quickButtonStyle}
-            onClick={() => handleDateChange(dayjs().format('YYYY-MM-DD'))}
+            onClick={() => handleDateChange(nowBeijing().format('YYYY-MM-DD'))}
           >
             今天
           </button>
           <button
             className="button secondary"
             style={quickButtonStyle}
-            onClick={() => handleDateChange(dayjs(selectedDate).add(1, 'day').format('YYYY-MM-DD'))}
+            onClick={() => {
+              const next = toBeijing(selectedDate)?.add(1, 'day').format('YYYY-MM-DD');
+              if (next) handleDateChange(next);
+            }}
           >
             后一天
           </button>
@@ -317,6 +328,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             >
               添加任务
             </button>
+            <VoiceTaskInput
+              onTaskCreated={async () => {
+                await loadTasks();
+                await loadYesterdayRemainingTasks();
+                refreshBoard();
+              }}
+            />
           </div>
         </section>
         <TaskBoardSection
@@ -487,7 +505,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               className="input"
               style={{ width: '100%' }}
               value={completionTime}
-              max={dayjs().format('YYYY-MM-DDTHH:mm')}
+              max={nowBeijing().format('YYYY-MM-DDTHH:mm')}
               onChange={(e) => setCompletionTime(e.target.value)}
             />
             <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>

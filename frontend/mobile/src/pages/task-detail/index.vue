@@ -131,6 +131,13 @@
         </view>
       </view>
     </view>
+    <PromptDialog
+      v-model:visible="promptVisible"
+      :title="promptTitle"
+      :placeholder="promptPlaceholder"
+      :value="promptValue"
+      @confirm="handlePromptConfirm"
+    />
   </view>
 </template>
 
@@ -141,7 +148,8 @@ import { ensureAuth } from '../../utils/auth';
 import { fetchTask, updateTask, updateTaskStatus } from '../../services/tasks';
 import { fetchRoles } from '../../services/roles';
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../../services/categories';
-import { formatBeijingDate, formatBeijingDateTime, formatBeijingTime } from '../../utils/date';
+import PromptDialog from '../../components/PromptDialog.vue';
+import { formatBeijingDate, formatBeijingDateTimeFromUtc, formatBeijingTime } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
 
 const taskId = ref(null);
@@ -162,6 +170,11 @@ const editDueTime = ref('23:59');
 const showCompletionModal = ref(false);
 const completionDate = ref('');
 const completionClock = ref('');
+const promptVisible = ref(false);
+const promptTitle = ref('');
+const promptPlaceholder = ref('');
+const promptValue = ref('');
+const promptType = ref('');
 
 const statusText = (value) => {
   if (value === 'todo') return '待办';
@@ -211,10 +224,10 @@ const planLabel = computed(() => {
   return `${start} ~ ${end}`;
 });
 
-const createdLabel = computed(() => (task.value?.created_at ? formatBeijingDateTime(task.value.created_at) : '-'));
-const updatedLabel = computed(() => (task.value?.updated_at ? formatBeijingDateTime(task.value.updated_at) : '-'));
-const completedLabel = computed(() => (task.value?.completed_at ? formatBeijingDateTime(task.value.completed_at) : '-'));
-const cancelledLabel = computed(() => (task.value?.cancelled_at ? formatBeijingDateTime(task.value.cancelled_at) : '-'));
+const createdLabel = computed(() => (task.value?.created_at ? formatBeijingDateTimeFromUtc(task.value.created_at) : '-'));
+const updatedLabel = computed(() => (task.value?.updated_at ? formatBeijingDateTimeFromUtc(task.value.updated_at) : '-'));
+const completedLabel = computed(() => (task.value?.completed_at ? formatBeijingDateTimeFromUtc(task.value.completed_at) : '-'));
+const cancelledLabel = computed(() => (task.value?.cancelled_at ? formatBeijingDateTimeFromUtc(task.value.cancelled_at) : '-'));
 
 const syncEditForm = () => {
   if (!task.value) return;
@@ -350,25 +363,16 @@ const openCategoryManager = () => {
   });
 };
 
+const openPrompt = (type, title, placeholder, value = '') => {
+  promptType.value = type;
+  promptTitle.value = title;
+  promptPlaceholder.value = placeholder;
+  promptValue.value = value;
+  promptVisible.value = true;
+};
+
 const handleCreateCategory = () => {
-  uni.showModal({
-    title: '新增分类',
-    editable: true,
-    placeholderText: '请输入分类名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await createCategory({ name });
-        await loadMeta();
-        const idx = editCategoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) editCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '新增失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-create', '新增分类', '请输入分类名称');
 };
 
 const handleRenameCategory = () => {
@@ -377,24 +381,7 @@ const handleRenameCategory = () => {
     uni.showToast({ title: '请选择要重命名的分类', icon: 'none' });
     return;
   }
-  uni.showModal({
-    title: '重命名分类',
-    editable: true,
-    placeholderText: '请输入新名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await updateCategory(current.value, { name });
-        await loadMeta();
-        const idx = editCategoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) editCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '重命名失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-rename', '重命名分类', '请输入新名称', current.label);
 };
 
 const handleDeleteCategory = () => {
@@ -417,6 +404,34 @@ const handleDeleteCategory = () => {
       }
     },
   });
+};
+
+const handlePromptConfirm = async (value) => {
+  const name = (value || '').trim();
+  if (!name) return;
+  if (promptType.value === 'category-create') {
+    try {
+      await createCategory({ name });
+      await loadMeta();
+      const idx = editCategoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) editCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: '新增失败', icon: 'none' });
+    }
+  }
+  if (promptType.value === 'category-rename') {
+    const current = editCategoryOptions.value[editCategoryIndex.value];
+    if (!current || current.value === null) return;
+    try {
+      await updateCategory(current.value, { name });
+      await loadMeta();
+      const idx = editCategoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) editCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: '重命名失败', icon: 'none' });
+    }
+  }
+  promptType.value = '';
 };
 
 const onEditRoleChange = (event) => {

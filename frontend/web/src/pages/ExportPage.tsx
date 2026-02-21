@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import dayjs from 'dayjs';
+import { nowBeijing } from '../utils/time';
 import { exportTasks, exportEvents, exportHabits, exportAll, downloadBlob } from '../services/export';
 
 export const ExportPage: React.FC = () => {
@@ -16,7 +16,7 @@ export const ExportPage: React.FC = () => {
     setLoading((prev) => ({ ...prev, [type]: true }));
     try {
       const blob = await exporter();
-      const filename = `${defaultName}_${dayjs().format('YYYYMMDD_HHmmss')}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      const filename = `${defaultName}_${nowBeijing().format('YYYYMMDD_HHmmss')}.${format === 'csv' ? 'csv' : 'xlsx'}`;
       downloadBlob(blob, filename);
     } catch (error) {
       window.alert(`导出${type}失败: ${error instanceof Error ? error.message : '未知错误'}`);

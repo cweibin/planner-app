@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BoardColumns, fetchBoardTasks, Task, TaskStatus, updateTaskStatus } from '../services/tasks';
+import { formatBeijing } from '../utils/time';
 
 const STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done', 'cancelled'];
 
@@ -67,6 +68,8 @@ export const TaskBoardPage: React.FC = () => {
     return <div>加载中...</div>;
   }
 
+  const formatBeijingTime = (value?: string | null) => formatBeijing(value);
+
   return (
     <div>
       <h1 className="page-title">任务看板</h1>
@@ -118,7 +121,7 @@ export const TaskBoardPage: React.FC = () => {
                 >
                   <div style={{ fontSize: 13, marginBottom: 4 }}>{task.title}</div>
                   <div style={{ fontSize: 11, color: '#555' }}>
-                    {task.due_date ? `截止 ${task.due_date.slice(0, 16).replace('T', ' ')}` : '无截止时间'}
+                    {task.due_date ? `截止 ${formatBeijingTime(task.due_date)}` : '无截止时间'}
                   </div>
                 </div>
               ))}

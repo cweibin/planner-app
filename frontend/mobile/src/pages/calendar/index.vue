@@ -78,6 +78,14 @@
         </picker-view>
       </view>
     </view>
+
+    <PromptDialog
+      v-model:visible="promptVisible"
+      :title="promptTitle"
+      :placeholder="promptPlaceholder"
+      :value="promptValue"
+      @confirm="handlePromptConfirm"
+    />
   </view>
 </template>
 
@@ -88,8 +96,9 @@ import { ensureAuth, getRoleId, setRoleId } from '../../utils/auth';
 import { fetchBoardTasks } from '../../services/tasks';
 import { createRole, deleteRole, fetchRoles, updateRole } from '../../services/roles';
 import { fetchProfile } from '../../services/auth';
-import { formatBeijingDate, formatDate } from '../../utils/date';
+import { formatBeijingDate, formatBeijingDateFromUtc, formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
+import PromptDialog from '../../components/PromptDialog.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -107,6 +116,11 @@ const roleOptions = ref([{ label: '全部', value: null }]);
 const selectedRoleIndex = ref(0);
 const userProfile = ref(null);
 const actionSheetOpen = ref(false);
+const promptVisible = ref(false);
+const promptTitle = ref('');
+const promptPlaceholder = ref('');
+const promptValue = ref('');
+const promptType = ref('');
 
 const currentMonthLabel = computed(() => {
   const date = currentMonth.value;
@@ -143,10 +157,10 @@ const getTaskStatusCountsForDate = (dateStr) => {
   const todoTasks = (tasksByStatus.value.todo || []).filter((t) => isTaskActiveOnDate(t, dateStr));
   const inProgressTasks = (tasksByStatus.value.in_progress || []).filter((t) => isTaskActiveOnDate(t, dateStr));
   const doneTasks = (tasksByStatus.value.done || []).filter(
-    (t) => t.completed_at && formatBeijingDate(t.completed_at) === dateStr,
+    (t) => t.completed_at && formatBeijingDateFromUtc(t.completed_at) === dateStr,
   );
   const cancelledTasks = (tasksByStatus.value.cancelled || []).filter(
-    (t) => t.cancelled_at && formatBeijingDate(t.cancelled_at) === dateStr,
+    (t) => t.cancelled_at && formatBeijingDateFromUtc(t.cancelled_at) === dateStr,
   );
   return {
     todo: todoTasks.length,
@@ -302,28 +316,16 @@ const onRoleChange = (event) => {
   void refresh();
 };
 
+const openPrompt = (type, title, placeholder, value = '') => {
+  promptType.value = type;
+  promptTitle.value = title;
+  promptPlaceholder.value = placeholder;
+  promptValue.value = value;
+  promptVisible.value = true;
+};
+
 const handleCreateRole = () => {
-  uni.showModal({
-    title: '新增角色',
-    editable: true,
-    placeholderText: '请输入角色名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await createRole(name);
-        await loadRoles();
-        const idx = roleOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) {
-          selectedRoleIndex.value = idx;
-          setRoleId(roleOptions.value[idx].value);
-        }
-      } catch {
-        uni.showToast({ title: '新增失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('role-create', '新增角色', '请输入角色名称');
 };
 
 const handleRenameRole = () => {
@@ -332,27 +334,7 @@ const handleRenameRole = () => {
     uni.showToast({ title: '请选择要重命名的角色', icon: 'none' });
     return;
   }
-  uni.showModal({
-    title: '重命名角色',
-    editable: true,
-    placeholderText: '请输入新名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await updateRole(current.value, name);
-        await loadRoles();
-        const idx = roleOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) {
-          selectedRoleIndex.value = idx;
-          setRoleId(roleOptions.value[idx].value);
-        }
-      } catch {
-        uni.showToast({ title: '重命名失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('role-rename', '重命名角色', '请输入新名称', current.label);
 };
 
 const handleDeleteRole = () => {
@@ -377,6 +359,40 @@ const handleDeleteRole = () => {
       }
     },
   });
+};
+
+const handlePromptConfirm = async (value) => {
+  const name = (value || '').trim();
+  if (!name) return;
+  if (promptType.value === 'role-create') {
+    try {
+      await createRole(name);
+      await loadRoles();
+      const idx = roleOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) {
+        selectedRoleIndex.value = idx;
+        setRoleId(roleOptions.value[idx].value);
+      }
+    } catch {
+      uni.showToast({ title: '新增失败', icon: 'none' });
+    }
+  }
+  if (promptType.value === 'role-rename') {
+    const current = roleOptions.value[selectedRoleIndex.value];
+    if (!current || current.value === null) return;
+    try {
+      await updateRole(current.value, name);
+      await loadRoles();
+      const idx = roleOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) {
+        selectedRoleIndex.value = idx;
+        setRoleId(roleOptions.value[idx].value);
+      }
+    } catch {
+      uni.showToast({ title: '重命名失败', icon: 'none' });
+    }
+  }
+  promptType.value = '';
 };
 
 const openRoleManager = () => {

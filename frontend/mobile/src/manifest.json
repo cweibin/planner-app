@@ -4,5 +4,8 @@
   "description": "Planner App 移动端 (uni-app)",
   "versionName": "0.1.0",
   "versionCode": 100,
-  "transformPx": false
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wxYOUR_APPID"
+  }
 }
