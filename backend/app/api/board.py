@@ -51,6 +51,13 @@ def get_board_tasks(
             active_range_filters.append(
                 (Task.start_date <= due_to) & (Task.due_date >= due_from)
             )
+            active_range_filters.append(
+                (Task.start_date <= due_to)
+                & (or_(Task.due_date >= due_from, Task.due_date.is_(None)))
+            )
+            active_range_filters.append(
+                (Task.start_date.is_(None)) & (Task.due_date >= due_from)
+            )
         elif due_from is not None:
             active_range_filters.append(Task.start_date >= due_from)
             active_range_filters.append(Task.due_date >= due_from)

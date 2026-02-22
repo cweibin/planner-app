@@ -109,6 +109,26 @@ export function formatBeijingTime(value) {
   return formatter.format(date);
 }
 
+export function getBeijingNowParts() {
+  const now = new Date();
+  const dateFormatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const timeFormatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return {
+    date: dateFormatter.format(now).replace(/\//g, '-'),
+    time: timeFormatter.format(now),
+  };
+}
+
 export function formatBeijingTimeFromUtc(value) {
   const date = parseDateTimeFromUtc(value);
   if (!date) return '';

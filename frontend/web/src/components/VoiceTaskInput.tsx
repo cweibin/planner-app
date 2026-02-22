@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import axios from 'axios';
-import { formatBeijing } from '../utils/time';
+import { formatBeijing, nowBeijing } from '../utils/time';
 import { createTaskFromVoice } from '../services/voice';
 import { Task, TaskStatus, createTask, updateTaskStatus } from '../services/tasks';
 
@@ -46,7 +46,9 @@ export const VoiceTaskInput: React.FC<VoiceTaskInputProps> = ({ onTaskCreated })
   const buildDraftForm = (draft: any) => ({
     title: draft?.title || '',
     description: draft?.description || '',
-    start_date: draft?.start_date ? formatBeijing(draft.start_date, 'YYYY-MM-DDTHH:mm') : '',
+    start_date: draft?.start_date
+      ? formatBeijing(draft.start_date, 'YYYY-MM-DDTHH:mm')
+      : nowBeijing().format('YYYY-MM-DDTHH:mm'),
     due_date: draft?.due_date ? formatBeijing(draft.due_date, 'YYYY-MM-DDTHH:mm') : '',
   });
 
@@ -318,6 +320,10 @@ export const VoiceTaskInput: React.FC<VoiceTaskInputProps> = ({ onTaskCreated })
                 const title = draftForm.title.trim();
                 if (!title) {
                   setError('标题不能为空');
+                  return;
+                }
+                if (!draftForm.start_date) {
+                  setError('开始时间不能为空');
                   return;
                 }
                 setLoading(true);

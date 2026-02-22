@@ -87,7 +87,7 @@
 import { ref } from 'vue';
 import { createTaskFromVoiceBlob } from '../../services/voice';
 import { updateTaskStatus } from '../../services/tasks';
-import { formatBeijingDate, formatBeijingTime, formatDate } from '../../utils/date';
+import { formatBeijingDate, formatBeijingTime, formatDate, getBeijingNowParts } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
 
 const voiceRecording = ref(false);
@@ -159,12 +159,18 @@ const handleVoiceBlob = async (blob) => {
     if (result?.draft) {
       voiceDraft.value = result.draft;
       voiceDraftForm.value = buildVoiceDraftForm(result.draft);
-      const startParts = extractDateTimeParts(result.draft.start_date);
-      const dueParts = extractDateTimeParts(result.draft.due_date);
-      startDate.value = startParts.date;
-      startTime.value = startParts.time || '09:00';
-      dueDate.value = dueParts.date;
-      dueTime.value = dueParts.time || '23:59';
+  const startParts = extractDateTimeParts(result.draft.start_date);
+  const dueParts = extractDateTimeParts(result.draft.due_date);
+  if (startParts.date || startParts.time) {
+    startDate.value = startParts.date;
+    startTime.value = startParts.time || '09:00';
+  } else {
+    const nowParts = getBeijingNowParts();
+    startDate.value = nowParts.date;
+    startTime.value = nowParts.time;
+  }
+  dueDate.value = dueParts.date;
+  dueTime.value = dueParts.time || '23:59';
       return;
     }
     if (result?.candidates?.length) {
@@ -325,9 +331,13 @@ const confirmVoiceDraft = async () => {
     voiceError.value = '标题不能为空';
     return;
   }
-  const effectiveStartDate = startDate.value || formatDate(new Date());
+  if (!startDate.value || !startTime.value) {
+    voiceError.value = '开始时间不能为空';
+    return;
+  }
+  const effectiveStartDate = startDate.value;
   const effectiveDueDate = dueDate.value || formatDate(new Date());
-  const start = toLocalDateTime(effectiveStartDate, startTime.value || '09:00');
+  const start = toLocalDateTime(effectiveStartDate, startTime.value);
   const due = toLocalDateTime(effectiveDueDate, dueTime.value || '23:59');
   try {
     voiceLoading.value = true;
