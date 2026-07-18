@@ -444,17 +444,17 @@ onShow(async () => {
 }
 
 .card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  border-radius: 18px;
+  padding: 16px;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 
 .section-title {
-  font-size: var(--font-body);
+  font-size: 14px;
   font-weight: 700;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 12px;
 }
 
 .form-field {
@@ -463,7 +463,7 @@ onShow(async () => {
 
 .label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 6px;
   display: block;
 }
@@ -471,7 +471,7 @@ onShow(async () => {
 .input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -484,7 +484,7 @@ onShow(async () => {
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 11px;
@@ -499,7 +499,7 @@ onShow(async () => {
 .picker-input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -518,10 +518,10 @@ onShow(async () => {
 
 .picker-manage {
   font-size: 11px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
   display: flex;
   align-items: center;

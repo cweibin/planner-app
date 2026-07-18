@@ -542,7 +542,7 @@ onShow(async () => {
 
 .welcome-user {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .welcome-right {
@@ -565,22 +565,22 @@ onShow(async () => {
 .picker-input {
   padding: 4px 6px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 10px;
 }
 
 .role-manage {
   font-size: 10px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 2px 6px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
 }
 
 .label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   white-space: nowrap;
 }
 
@@ -615,14 +615,14 @@ onShow(async () => {
 
 .month-hint {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   white-space: nowrap;
 }
 
 .month-input {
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
   background: #fff;
 }
@@ -632,7 +632,7 @@ onShow(async () => {
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 8px;
 }
 
@@ -643,7 +643,7 @@ onShow(async () => {
 }
 
 .calendar-day {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 4px 4px;
   text-align: center;
@@ -658,7 +658,7 @@ onShow(async () => {
 }
 
 .calendar-day.full .ratio {
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .calendar-day.empty {
@@ -690,7 +690,7 @@ onShow(async () => {
 .ratio {
   display: block;
   font-size: 10px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 2px;
 }
 
@@ -700,7 +700,7 @@ onShow(async () => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   justify-content: center;
 }
 
@@ -708,7 +708,7 @@ onShow(async () => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--success);
+  background: #4e9f86;
 }
 
 .modal-mask {
@@ -727,7 +727,7 @@ onShow(async () => {
   background: #fff;
   border-radius: 14px;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
 }
 
 .modal-header {

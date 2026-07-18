@@ -99,7 +99,7 @@ onShow(() => {
 
 .bar-label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .bar-row {
@@ -123,7 +123,7 @@ onShow(() => {
 
 .bar-value {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .trend {
@@ -155,6 +155,6 @@ onShow(() => {
 
 .trend-label {
   font-size: 10px;
-  color: var(--muted);
+  color: #776b7f;
 }
 </style>

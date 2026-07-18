@@ -225,7 +225,7 @@ onShow(async () => {
 }
 
 .card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 12px;
   background: #fff;
@@ -243,7 +243,7 @@ onShow(async () => {
 
 .label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 6px;
   display: block;
 }
@@ -251,7 +251,7 @@ onShow(async () => {
 .input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 12px 8px;
   font-size: 11px;
@@ -264,7 +264,7 @@ onShow(async () => {
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -282,7 +282,7 @@ onShow(async () => {
 .picker-input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;

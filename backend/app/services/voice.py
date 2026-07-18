@@ -1,7 +1,9 @@
+import asyncio
 import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 import uuid
@@ -13,7 +15,34 @@ import httpx
 
 from ..config import settings
 
+logger = logging.getLogger(__name__)
+
+# Refresh margin: refresh the token before it actually expires to avoid
+# edge-of-window 401s. Aliyun NLS tokens issued by CreateToken are valid for
+# 72 hours; a 5-minute margin is plenty for long-running services.
+_TOKEN_REFRESH_MARGIN_SECONDS = 300
+
+# Aliyun NLS endpoints are public internet services. We disable
+# httpx's trust_env so it does NOT route Aliyun calls through a local
+# system proxy (e.g. macOS HTTPProxy/HTTPSProxy picked up via
+# urllib.getproxies()), which can hang and cause intermittent
+# ConnectTimeouts. Connect directly instead.
+_ALIYUN_CLIENT_KWARGS = {"timeout": 30, "trust_env": False}
+
 _token_cache: Dict[str, Any] = {"token": None, "expire_time": 0}
+_token_lock: Optional[asyncio.Lock] = None
+
+
+def _get_token_lock() -> asyncio.Lock:
+    """Return a process-wide asyncio.Lock, creating it lazily.
+
+    Created lazily because asyncio.Lock() must be instantiated inside a
+    running event loop on some Python/asyncio versions.
+    """
+    global _token_lock
+    if _token_lock is None:
+        _token_lock = asyncio.Lock()
+    return _token_lock
 
 
 def _percent_encode(value: str) -> str:
@@ -35,15 +64,20 @@ def _sign_aliyun_params(params: Dict[str, str], access_key_secret: str) -> str:
     return base64.b64encode(signature).decode("utf-8")
 
 
-async def _get_aliyun_token() -> str:
-    if settings.ALIYUN_NLS_TOKEN:
-        return settings.ALIYUN_NLS_TOKEN
-    now = int(time.time())
-    cached_token = _token_cache.get("token")
-    if cached_token and _token_cache.get("expire_time", 0) - 60 > now:
-        return cached_token
+async def _fetch_token_from_access_key() -> Tuple[str, int]:
+    """Fetch a fresh Aliyun NLS Access Token via the CreateToken RPC API.
+
+    Implements the official long-term usage pattern: sign a CreateToken request
+    with the AccessKey pair (HMAC-SHA1 RPC signature), call the NLS Meta
+    endpoint, and return ``(token, expire_time)``.
+
+    Reference: https://help.aliyun.com/zh/isi/getting-started/obtain-an-access-token
+    """
     if not settings.ALIYUN_ACCESS_KEY_ID or not settings.ALIYUN_ACCESS_KEY_SECRET:
-        raise RuntimeError("Aliyun AccessKey 未配置")
+        raise RuntimeError(
+            "Aliyun AccessKey 未配置：需要 ALIYUN_ACCESS_KEY_ID + "
+            "ALIYUN_ACCESS_KEY_SECRET 才能动态签发 NLS Access Token"
+        )
 
     region = settings.ALIYUN_NLS_REGION or "cn-shanghai"
     params = {
@@ -57,20 +91,86 @@ async def _get_aliyun_token() -> str:
         "SignatureNonce": str(uuid.uuid4()),
         "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
-    params["Signature"] = _sign_aliyun_params(params, settings.ALIYUN_ACCESS_KEY_SECRET)
+    params["Signature"] = _sign_aliyun_params(
+        params, settings.ALIYUN_ACCESS_KEY_SECRET
+    )
     token_url = f"https://nls-meta.{region}.aliyuncs.com/"
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
         resp = await client.get(token_url, params=params)
         resp.raise_for_status()
         data = resp.json()
     token = data.get("Token", {}).get("Id")
     expire_time = int(data.get("Token", {}).get("ExpireTime", 0))
     if not token:
-        raise RuntimeError("获取 Aliyun Token 失败")
-    _token_cache["token"] = token
-    _token_cache["expire_time"] = expire_time or (now + 3600)
-    return token
+        raise RuntimeError(f"获取 Aliyun Token 失败：{data!r}")
+    return token, expire_time
 
+
+def _is_token_valid(now: int) -> bool:
+    cached = _token_cache.get("token")
+    if not cached:
+        return False
+    return _token_cache.get("expire_time", 0) - _TOKEN_REFRESH_MARGIN_SECONDS > now
+
+
+async def _get_aliyun_token(force_refresh: bool = False) -> str:
+    """Return a valid Aliyun NLS Access Token, refreshing it when needed.
+
+    Long-term usage follows the Aliyun ISI recommendation: the Access Token is
+    obtained and refreshed dynamically from the AccessKey via CreateToken,
+    cached in-memory, and refreshed before its expiry window closes. A static
+    ``ALIYUN_NLS_TOKEN`` is only used as a manual fallback when no AccessKey
+    is configured; in that mode the caller is responsible for rotating it.
+
+    Args:
+        force_refresh: bypass the cache and fetch a fresh token. Used when the
+            ASR endpoint reports the cached token is invalid (ACCESS_DENIED),
+            so the next request retries with a brand-new token.
+    """
+    now = int(time.time())
+
+    # Manual fallback mode: no AccessKey configured. Use the static token as-is
+    # but never trust it blindly on a forced refresh — there is nothing to
+    # refresh from, so we just re-return it (the caller will surface the 401).
+    if not settings.ALIYUN_ACCESS_KEY_ID or not settings.ALIYUN_ACCESS_KEY_SECRET:
+        if not settings.ALIYUN_NLS_TOKEN:
+            raise RuntimeError(
+                "Aliyun NLS 未配置：请配置 AccessKey（推荐，支持自动刷新）或 "
+                "手动配置 ALIYUN_NLS_TOKEN（不自动刷新）"
+            )
+        if force_refresh:
+            logger.warning(
+                "ALIYUN_NLS_TOKEN 为静态手动配置，无法自动刷新；"
+                "ASR 报告 token 无效时将原样重试，建议改用 AccessKey 动态签发。"
+            )
+        return settings.ALIYUN_NLS_TOKEN
+
+    # Fast path: cached token is still within the safe window.
+    if not force_refresh and _is_token_valid(now):
+        return _token_cache["token"]
+
+    # Slow path: fetch (or refresh) under a lock to avoid thundering herd when
+    # many requests hit the expiry boundary at the same time.
+    async with _get_token_lock():
+        now = int(time.time())
+        if not force_refresh and _is_token_valid(now):
+            return _token_cache["token"]
+        token, expire_time = await _fetch_token_from_access_key()
+        _token_cache["token"] = token
+        _token_cache["expire_time"] = expire_time or (now + 3600)
+        ttl = _token_cache["expire_time"] - now
+        logger.info(
+            "Aliyun NLS Access Token 已刷新，有效期约 %ds（到期前 %ds 自动刷新）",
+            ttl, _TOKEN_REFRESH_MARGIN_SECONDS,
+        )
+        return token
+
+
+def _is_access_denied_message(message: str) -> bool:
+    if not message:
+        return False
+    msg = str(message).lower()
+    return "access_denied" in msg or "token" in msg and "invalid" in msg
 
 def _guess_format(filename: Optional[str], content_type: Optional[str]) -> str:
     if filename:
@@ -97,6 +197,16 @@ def _default_sample_rate(fmt: str) -> int:
     return settings.ALIYUN_NLS_SAMPLE_RATE or 16000
 
 
+async def _call_aliyun_asr(
+    client: httpx.AsyncClient, url: str, params: Dict[str, str], token: str,
+    audio_bytes: bytes,
+) -> httpx.Response:
+    headers = {"X-NLS-Token": token, "Content-Type": "application/octet-stream"}
+    return await client.post(
+        url, params=params, content=audio_bytes, headers=headers
+    )
+
+
 async def transcribe_aliyun(
     audio_bytes: bytes, filename: Optional[str], content_type: Optional[str]
 ) -> str:
@@ -114,9 +224,23 @@ async def transcribe_aliyun(
         "enable_punctuation_prediction": "true",
         "enable_inverse_text_normalization": "true",
     }
-    headers = {"X-NLS-Token": token, "Content-Type": "application/octet-stream"}
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(url, params=params, content=audio_bytes, headers=headers)
+    async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
+        resp = await _call_aliyun_asr(client, url, params, token, audio_bytes)
+        # Aliyun returns HTTP 400 with an ACCESS_DENIED body when the token is
+        # expired/invalid. Force-refresh once and retry before surfacing the
+        # error, so long-running services self-heal after a token rotation.
+        if resp.status_code == 400:
+            try:
+                body = resp.json()
+            except Exception:
+                body = {}
+            if _is_access_denied_message(body.get("message")):
+                logger.warning(
+                    "Aliyun ASR 报告 token 无效，强制刷新后重试一次: %s",
+                    body.get("message"),
+                )
+                token = await _get_aliyun_token(force_refresh=True)
+                resp = await _call_aliyun_asr(client, url, params, token, audio_bytes)
         resp.raise_for_status()
         data = resp.json()
     if data.get("status") != 20000000:
@@ -184,7 +308,8 @@ async def extract_task_with_glm(transcript: str) -> Dict[str, Any]:
     api_base = settings.GLM_API_BASE.rstrip("/")
     url = f"{api_base}/chat/completions"
     headers = {"Authorization": f"Bearer {settings.GLM_API_KEY}"}
-    async with httpx.AsyncClient(timeout=30) as client:
+    # Bypass local system proxy (same rationale as Aliyun clients).
+    async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
         resp = await client.post(url, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()

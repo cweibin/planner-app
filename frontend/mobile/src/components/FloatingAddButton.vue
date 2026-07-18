@@ -24,7 +24,6 @@ const openAdd = () => {
     uni.navigateTo({ url: '/pages/habit-create/index' });
     return;
   }
-  // #ifdef H5
   uni.showActionSheet({
     itemList: ['直接新建', '语音新建'],
     success: (res) => {
@@ -37,9 +36,6 @@ const openAdd = () => {
       }
     },
   });
-  return;
-  // #endif
-  uni.navigateTo({ url: '/pages/task-create/index' });
 };
 </script>
 

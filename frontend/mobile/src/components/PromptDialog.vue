@@ -73,7 +73,7 @@ const handleConfirm = () => {
   background: #fff;
   border-radius: 14px;
   padding: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
 }
 
 .prompt-title {
@@ -83,7 +83,7 @@ const handleConfirm = () => {
 
 .prompt-input {
   margin-top: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 12px;

@@ -562,7 +562,7 @@ onShow(async () => {
 }
 
 .card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 12px;
   background: #fff;
@@ -577,7 +577,7 @@ onShow(async () => {
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .form-field {
@@ -586,13 +586,13 @@ onShow(async () => {
 
 .field-label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 6px;
   display: block;
 }
 
 .input {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -600,7 +600,7 @@ onShow(async () => {
 }
 
 .textarea {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -609,7 +609,7 @@ onShow(async () => {
 }
 
 .picker-input {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -628,10 +628,10 @@ onShow(async () => {
 
 .picker-manage {
   font-size: 11px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
   display: flex;
   align-items: center;
@@ -648,7 +648,7 @@ onShow(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px dashed var(--line);
+  border-bottom: 1px dashed rgba(110, 95, 116, 0.4);
 }
 
 .info-row:last-child {
@@ -657,7 +657,7 @@ onShow(async () => {
 
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .value {
@@ -714,7 +714,7 @@ onShow(async () => {
 .date-input {
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
   text-align: center;
 }
@@ -733,14 +733,14 @@ onShow(async () => {
   height: 30px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: var(--text);
+  color: #2b2430;
   z-index: 1001;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 </style>

@@ -172,13 +172,13 @@ onShow(() => {
 
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .picker-input {
   padding: 6px 8px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
 }
 
@@ -189,7 +189,7 @@ onShow(() => {
 }
 
 .task-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 10px;
   margin-bottom: 8px;
@@ -207,7 +207,7 @@ onShow(() => {
 
 .task-meta {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 4px;
 }
 
@@ -221,8 +221,8 @@ onShow(() => {
   padding: 2px 6px;
   border-radius: 999px;
   font-size: 10px;
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  color: #776b7f;
 }
 
 .tag.high {
@@ -250,6 +250,6 @@ onShow(() => {
 
 .empty {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 </style>

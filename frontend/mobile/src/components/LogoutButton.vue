@@ -24,18 +24,18 @@ const handleLogout = () => {
   height: 30px;
   border-radius: 50%;
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 
 .logout-icon {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text);
+  color: #2b2430;
   line-height: 1;
 }
 </style>

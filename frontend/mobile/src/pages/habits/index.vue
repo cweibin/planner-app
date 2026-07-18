@@ -494,11 +494,11 @@ onShow(async () => {
 }
 
 .stats-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 10px;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -508,12 +508,12 @@ onShow(async () => {
 .stats-value {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text);
+  color: #2b2430;
 }
 
 .stats-label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .section-header-row {
@@ -524,12 +524,12 @@ onShow(async () => {
 }
 
 .filter-chip {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: #776b7f;
   background: #fff;
 }
 
@@ -538,7 +538,7 @@ onShow(async () => {
 }
 
 .habit-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 8px;
   display: flex;
@@ -644,7 +644,7 @@ onShow(async () => {
 .habit-meta {
   display: block;
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 2px;
 }
 
@@ -656,7 +656,7 @@ onShow(async () => {
 }
 
 .week-cell {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   text-align: center;
   padding: 4px 0;
@@ -700,7 +700,7 @@ onShow(async () => {
 .rate {
   font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
+  color: #b76e8a;
   text-align: center;
 }
 
@@ -713,12 +713,12 @@ onShow(async () => {
 
 .week-label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .empty {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   text-align: center;
   padding: 16px 0;
 }

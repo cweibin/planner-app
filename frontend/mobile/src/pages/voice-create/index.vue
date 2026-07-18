@@ -85,7 +85,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { createTaskFromVoiceBlob } from '../../services/voice';
+import { createTaskFromVoiceBlob, createTaskFromVoiceFile } from '../../services/voice';
 import { updateTaskStatus } from '../../services/tasks';
 import { formatBeijingDate, formatBeijingTime, formatDate, getBeijingNowParts } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
@@ -113,6 +113,8 @@ let audioContext = null;
 let processorNode = null;
 let pcmChunks = [];
 let inputSampleRate = 48000;
+let recorderManager = null;
+let recorderReady = false;
 
 const buildVoiceDraftForm = (draft) => ({
   title: draft?.title || '',
@@ -149,14 +151,9 @@ const clearVoiceDraft = () => {
   dueTime.value = '23:59';
 };
 
-const handleVoiceBlob = async (blob) => {
-  if (!blob) return;
-  voiceLoading.value = true;
-  voiceError.value = '';
-  try {
-    const result = await createTaskFromVoiceBlob(blob);
-    voiceTranscript.value = result?.transcript || '';
-    if (result?.draft) {
+const applyVoiceResult = (result) => {
+  voiceTranscript.value = result?.transcript || '';
+  if (result?.draft) {
       voiceDraft.value = result.draft;
       voiceDraftForm.value = buildVoiceDraftForm(result.draft);
   const startParts = extractDateTimeParts(result.draft.start_date);
@@ -182,8 +179,33 @@ const handleVoiceBlob = async (blob) => {
       return;
     }
     uni.showToast({ title: '未识别到可创建任务', icon: 'none' });
+};
+
+const handleVoiceBlob = async (blob) => {
+  if (!blob) return;
+  voiceLoading.value = true;
+  voiceError.value = '';
+  try {
+    const result = await createTaskFromVoiceBlob(blob);
+    applyVoiceResult(result);
   } catch (err) {
-    const message = err?.message || String(err);
+    const message = (err && err.message) || String(err);
+    voiceError.value = message || '语音解析失败';
+  } finally {
+    voiceLoading.value = false;
+    voiceRecording.value = false;
+  }
+};
+
+const handleVoiceFile = async (filePath) => {
+  if (!filePath) return;
+  voiceLoading.value = true;
+  voiceError.value = '';
+  try {
+    const result = await createTaskFromVoiceFile(filePath);
+    applyVoiceResult(result);
+  } catch (err) {
+    const message = (err && err.message) || String(err);
     voiceError.value = message || '语音解析失败';
   } finally {
     voiceLoading.value = false;
@@ -262,11 +284,34 @@ const startVoiceRecording = async () => {
   }
   // #endif
   // #ifndef H5
-  uni.showToast({ title: '当前平台暂不支持语音输入', icon: 'none' });
+  if (!recorderReady) {
+    recorderManager = uni.getRecorderManager();
+    recorderManager.onStop((res) => {
+      voiceRecording.value = false;
+      if (!res || !res.tempFilePath) {
+        voiceError.value = '未获取到录音数据';
+        return;
+      }
+      void handleVoiceFile(res.tempFilePath);
+    });
+    recorderManager.onError((err) => {
+      voiceRecording.value = false;
+      voiceError.value = (err && err.errMsg) || '录音失败';
+    });
+    recorderReady = true;
+  }
+  recorderManager.start({ sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 96000, format: 'mp3' });
+  voiceRecording.value = true;
   // #endif
 };
 
 const stopVoiceRecording = () => {
+  // #ifndef H5
+  if (recorderReady && recorderManager) {
+    recorderManager.stop();
+    return;
+  }
+  // #endif
   if (voiceUsingWav.value) {
     if (processorNode) processorNode.disconnect();
     if (audioContext) audioContext.close();
@@ -436,11 +481,11 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 }
 
 .card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  border-radius: 18px;
+  padding: 16px;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 
 .voice-row {
@@ -451,13 +496,13 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 
 .voice-status {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-tip {
   margin-top: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-error {
@@ -481,7 +526,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 
 .voice-candidates-title {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-candidates-list {
@@ -493,7 +538,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 .voice-draft {
   margin-top: 8px;
   padding: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   background: #fff;
   display: flex;
@@ -524,7 +569,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 }
 
 .voice-draft-input {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 12px;
@@ -549,7 +594,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 .picker-input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -562,7 +607,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 }
 
 .voice-draft-textarea {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 12px;

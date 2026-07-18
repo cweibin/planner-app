@@ -506,6 +506,8 @@ const swipeTranslateX = ref(0);
 const SWIPE_ACTION_WIDTH = 240;
 const isDragging = ref(false);
 const lastTouchTime = ref(0);
+const lastTouchTaskId = ref(null);
+const DOUBLE_TAP_INTERVAL = 300;
 const voiceRecording = ref(false);
 const voiceLoading = ref(false);
 const voiceError = ref('');
@@ -1009,25 +1011,35 @@ const onSwipeEnd = (task) => {
   }, 0);
 };
 
-const handleTaskTap = (task) => {
+const handleTaskTouchEnd = (_event, task) => {
   if (!task?.id) return;
   if (isDragging.value) return;
   if (swipeOpenId.value === task.id) {
     resetSwipe();
     return;
   }
-  openTask(task.id);
-};
-
-const handleTaskTouchEnd = (_event, task) => {
-  lastTouchTime.value = Date.now();
-  handleTaskTap(task);
+  const now = Date.now();
+  const isDoubleTap =
+    lastTouchTaskId.value === task.id
+    && now - lastTouchTime.value <= DOUBLE_TAP_INTERVAL;
+  lastTouchTime.value = now;
+  lastTouchTaskId.value = task.id;
+  if (isDoubleTap) {
+    lastTouchTime.value = 0;
+    lastTouchTaskId.value = null;
+    openTask(task.id);
+  }
 };
 
 const handleTaskClick = (task) => {
+  if (!task?.id) return;
   const now = Date.now();
   if (now - lastTouchTime.value < 400) return;
-  handleTaskTap(task);
+  if (swipeOpenId.value === task.id) {
+    resetSwipe();
+    return;
+  }
+  openTask(task.id);
 };
 
 const stopVoiceStream = () => {
@@ -1522,8 +1534,8 @@ onShow(async () => {
 .welcome-date {
   display: block;
   margin-top: 4px;
-  color: var(--muted);
-  font-size: var(--font-small);
+  color: #776b7f;
+  font-size: 12px;
 }
 
 .welcome-left {
@@ -1538,7 +1550,7 @@ onShow(async () => {
 
 .welcome-user {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .role-inline {
@@ -1566,10 +1578,10 @@ onShow(async () => {
 
 .role-manage {
   font-size: 10px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 2px 6px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
 }
 
@@ -1591,14 +1603,14 @@ onShow(async () => {
 
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   white-space: nowrap;
 }
 
 .date-input {
   padding: 5px 8px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
   text-align: center;
   white-space: nowrap;
@@ -1633,7 +1645,7 @@ onShow(async () => {
   margin-top: 6px;
   padding: 5px 8px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
 }
 
@@ -1645,7 +1657,7 @@ onShow(async () => {
 
 .search-input {
   flex: 1;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 5px 8px;
   font-size: 12px;
@@ -1663,13 +1675,13 @@ onShow(async () => {
 
 .voice-status {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-tip {
   margin-top: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-error {
@@ -1693,7 +1705,7 @@ onShow(async () => {
 
 .voice-candidates-title {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .voice-candidates-list {
@@ -1705,7 +1717,7 @@ onShow(async () => {
 .voice-draft {
   margin-top: 8px;
   padding: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   background: #fff;
   display: flex;
@@ -1736,7 +1748,7 @@ onShow(async () => {
 }
 
 .voice-draft-input {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 12px;
@@ -1744,7 +1756,7 @@ onShow(async () => {
 }
 
 .voice-draft-textarea {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 12px;
@@ -1774,7 +1786,7 @@ onShow(async () => {
   background: #fff;
   border-radius: 14px;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
 }
 
 .modal-header {
@@ -1829,13 +1841,13 @@ onShow(async () => {
 
 .section-toggle {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .subsection + .subsection {
   margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px dashed var(--line);
+  border-top: 1px dashed rgba(110, 95, 116, 0.4);
 }
 
 .subsection {
@@ -1852,11 +1864,11 @@ onShow(async () => {
 
 .section-meta {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .task-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 8px;
   transition: transform 0.2s ease;
@@ -1951,7 +1963,7 @@ onShow(async () => {
   display: block;
   margin-top: 4px;
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .task-tags {
@@ -1964,8 +1976,8 @@ onShow(async () => {
   padding: 2px 6px;
   border-radius: 999px;
   font-size: 10px;
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  color: #776b7f;
 }
 
 .tag.high {
@@ -1999,7 +2011,7 @@ onShow(async () => {
 
 .empty {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 </style>

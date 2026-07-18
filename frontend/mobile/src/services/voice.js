@@ -30,6 +30,45 @@ export async function createTaskFromVoiceBlob(blob) {
   return payload;
   // #endif
   // #ifndef H5
-  throw new Error('当前平台暂不支持语音输入');
+  return createTaskFromVoiceFile(blob);
+  // #endif
+}
+
+export function createTaskFromVoiceFile(filePath) {
+  // #ifndef H5
+  return new Promise((resolve, reject) => {
+    const baseUrl = getBaseUrl();
+    const token = getToken();
+    const header = {};
+    if (token) {
+      header.Authorization = `Bearer ${token}`;
+    }
+    uni.uploadFile({
+      url: `${baseUrl}/voice/tasks`,
+      filePath,
+      name: 'audio',
+      header,
+      success: (res) => {
+        let payload = null;
+        try {
+          payload = JSON.parse(res.data);
+        } catch (e) {
+          payload = null;
+        }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          const detail = payload && payload.detail;
+          reject(new Error(detail || `语音解析失败(${res.statusCode})`));
+          return;
+        }
+        resolve(payload);
+      },
+      fail: (err) => {
+        reject(new Error((err && err.errMsg) || '语音上传失败'));
+      },
+    });
+  });
+  // #endif
+  // #ifdef H5
+  return Promise.reject(new Error('当前平台暂不支持文件方式语音输入'));
   // #endif
 }

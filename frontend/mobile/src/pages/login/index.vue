@@ -156,13 +156,13 @@ onShow(() => {
 
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 6px;
   display: block;
 }
 
 .input {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 14px;
@@ -182,10 +182,10 @@ onShow(() => {
   justify-content: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .switch-link {
-  color: var(--accent);
+  color: #b76e8a;
 }
 </style>

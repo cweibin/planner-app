@@ -55,7 +55,7 @@ onMounted(() => {
   height: 58px;
   padding-bottom: env(safe-area-inset-bottom);
   background: #fffdfd;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(110, 95, 116, 0.4);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -67,11 +67,11 @@ onMounted(() => {
   text-align: center;
   font-size: 15px;
   font-weight: 700;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .tab-item.active {
-  color: var(--accent);
+  color: #b76e8a;
   font-weight: 700;
 }
 
