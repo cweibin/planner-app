@@ -1,14 +1,18 @@
 from typing import Annotated
 
+import base64
 from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.auth import get_current_user
 from ..dependencies import get_db
 from ..models.task import Task, TaskStatus
+from ..models.role import Role
+from sqlalchemy import func
 from ..models.user import User
 from ..schemas.task import TaskCreate
 from ..schemas.voice import VoiceTaskCandidate, VoiceTaskDraft, VoiceTaskResponse
@@ -75,23 +79,18 @@ def _to_candidate(task: Task) -> VoiceTaskCandidate:
     )
 
 
-@router.post("/tasks", response_model=VoiceTaskResponse, status_code=status.HTTP_200_OK)
-async def create_task_from_voice(
-    audio: Annotated[UploadFile, File(...)],
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    audio_bytes = await audio.read()
+async def _process_voice(audio_bytes, filename, content_type, db, current_user):
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="未检测到音频数据")
     try:
-        transcript = await transcribe_aliyun(audio_bytes, audio.filename, audio.content_type)
+        transcript = await transcribe_aliyun(audio_bytes, filename, content_type)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     if not transcript:
         raise HTTPException(status_code=400, detail="语音识别未返回内容")
     try:
-        raw_task = await extract_task_with_glm(transcript)
+        role_names = [r.name for r in db.query(Role).filter(Role.user_id == current_user.id).order_by(Role.id.asc()).all()]
+        raw_task = await extract_task_with_glm(transcript, role_names=role_names)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -142,6 +141,16 @@ async def create_task_from_voice(
             suggested_task=_to_candidate(task),
         )
 
+    role_name = str(raw_task.get("role_name") or "").strip()
+    if role_name:
+        role = (
+            db.query(Role)
+            .filter(Role.user_id == current_user.id, func.lower(Role.name) == role_name.lower())
+            .first()
+        )
+        if role:
+            raw_task["role_id"] = role.id
+        raw_task["role_name"] = role_name
     try:
         normalized, _ = normalize_task_payload(raw_task)
     except Exception as exc:
@@ -154,3 +163,32 @@ async def create_task_from_voice(
         status=draft.status.value if hasattr(draft.status, "value") else str(draft.status),
         draft=draft,
     )
+
+
+class VoiceBase64Request(BaseModel):
+    audio_base64: str
+    filename: str = "voice.wav"
+    content_type: Optional[str] = "audio/wav"
+
+
+@router.post("/tasks", response_model=VoiceTaskResponse, status_code=status.HTTP_200_OK)
+async def create_task_from_voice(
+    audio: Annotated[UploadFile, File(...)],
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    audio_bytes = await audio.read()
+    return await _process_voice(audio_bytes, audio.filename, audio.content_type, db, current_user)
+
+
+@router.post("/tasks/base64", response_model=VoiceTaskResponse, status_code=status.HTTP_200_OK)
+async def create_task_from_voice_base64(
+    payload: VoiceBase64Request,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    try:
+        audio_bytes = base64.b64decode(payload.audio_base64)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="音频 base64 解码失败") from exc
+    return await _process_voice(audio_bytes, payload.filename, payload.content_type, db, current_user)

@@ -19,6 +19,20 @@ export default {
 </script>
 
 <style>
+/* mp-weixin <button> 默认带灰色背景和 ::after 边框，会盖过 .btn 自定义样式。
+   这里统一重置，让 .btn 类完全控制外观。 */
+button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+  border-radius: 0;
+}
+button::after {
+  border: none;
+}
+
 page {
   background: #f7f1f5;
   color: #2b2430;

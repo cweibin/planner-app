@@ -2,12 +2,6 @@
   <view class="page">
     <LogoutButton />
     <view class="card">
-      <view class="voice-row">
-        <button class="btn primary" size="mini" :disabled="voiceLoading" @click="toggleVoiceRecording">
-          {{ voiceRecording ? '停止录音' : '语音输入' }}
-        </button>
-        <text v-if="voiceLoading" class="voice-status">识别中...</text>
-      </view>
       <view v-if="voiceUsingWav && !voiceLoading" class="voice-tip">
         当前浏览器不支持 OGG/OPUS，已切换为 WAV 录音。
       </view>
@@ -59,6 +53,13 @@
               auto-height
             />
           </view>
+          <view class="voice-draft-field">
+            <text class="voice-draft-label">角色</text>
+            <picker :range="roleOptions" range-key="label" :value="selectedRoleIndex" @change="onRoleChange">
+              <view class="picker-input">{{ roleOptions[selectedRoleIndex]?.label || '未指定' }}</view>
+            </picker>
+            <text v-if="voiceDraftForm.roleName && roleOptions[selectedRoleIndex]?.value === null" class="voice-role-hint">识别：{{ voiceDraftForm.roleName }}（可在上方选择已有角色）</text>
+          </view>
         </view>
         <view class="voice-draft-actions">
           <button class="btn" size="mini" @click="clearVoiceDraft">取消</button>
@@ -80,17 +81,33 @@
         </view>
       </view>
     </view>
+    <view class="voice-bar">
+      <view class="voice-bar-inner">
+        <button class="btn primary" size="mini" :disabled="voiceLoading" @click="toggleVoiceRecording">
+          {{ voiceRecording ? '停止录音 (' + voiceCountdown + 's)' : '语音输入' }}
+        </button>
+        <button v-if="voiceRecording" class="btn" size="mini" @click="cancelRecording">取消</button>
+      </view>
+      <text v-if="voiceLoading" class="voice-status">识别中...</text>
+      <text v-else-if="voiceRecording" class="voice-status">录音中 {{ voiceCountdown }}s</text>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { createTaskFromVoiceBlob, createTaskFromVoiceFile } from '../../services/voice';
+import { fetchRoles } from '../../services/roles';
+import { ensureAuth } from '../../utils/auth';
 import { updateTaskStatus } from '../../services/tasks';
 import { formatBeijingDate, formatBeijingTime, formatDate, getBeijingNowParts } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
 
 const voiceRecording = ref(false);
+const voiceCountdown = ref(0);
+let countdownTimer = null;
+let cancelRequested = false;
 const voiceLoading = ref(false);
 const voiceError = ref('');
 const voiceTranscript = ref('');
@@ -101,7 +118,11 @@ const voiceDraft = ref(null);
 const voiceDraftForm = ref({
   title: '',
   description: '',
+  roleName: '',
+  roleId: null,
 });
+const roleOptions = ref([{ label: '未指定', value: null }]);
+const selectedRoleIndex = ref(0);
 const startDate = ref('');
 const startTime = ref('09:00');
 const dueDate = ref('');
@@ -119,7 +140,37 @@ let recorderReady = false;
 const buildVoiceDraftForm = (draft) => ({
   title: draft?.title || '',
   description: draft?.description || '',
+  roleName: draft?.role_name || '',
+  roleId: draft?.role_id || null,
 });
+
+const resolveRoleFromDraft = (draft) => {
+  const name = (draft?.role_name || '').trim();
+  const id = draft?.role_id || null;
+  if (id) {
+    const idx = roleOptions.value.findIndex((r) => r.value === id);
+    if (idx >= 0) { selectedRoleIndex.value = idx; return; }
+  }
+  if (name) {
+    const idx = roleOptions.value.findIndex((r) => (r.label || '').toLowerCase() === name.toLowerCase());
+    if (idx >= 0) { selectedRoleIndex.value = idx; return; }
+  }
+  selectedRoleIndex.value = 0;
+};
+
+const onRoleChange = (e) => {
+  selectedRoleIndex.value = Number(e.detail.value);
+};
+
+const loadRoles = async () => {
+  try {
+    const res = await fetchRoles();
+    const list = Array.isArray(res) ? res : (res && res.data) || [];
+    roleOptions.value = [{ label: '未指定', value: null }, ...list.map((r) => ({ label: r.name, value: r.id }))];
+  } catch (e) {
+    roleOptions.value = [{ label: '未指定', value: null }];
+  }
+};
 
 const extractDateTimeParts = (value) => {
   if (!value) return { date: '', time: '' };
@@ -142,6 +193,25 @@ const stopVoiceStream = () => {
   }
 };
 
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+};
+
+const startCountdown = () => {
+  stopCountdown();
+  voiceCountdown.value = 15;
+  countdownTimer = setInterval(() => {
+    voiceCountdown.value -= 1;
+    if (voiceCountdown.value <= 0) {
+      stopCountdown();
+      stopVoiceRecording();
+    }
+  }, 1000);
+};
+
 const clearVoiceDraft = () => {
   voiceDraft.value = null;
   voiceDraftForm.value = buildVoiceDraftForm(null);
@@ -156,6 +226,7 @@ const applyVoiceResult = (result) => {
   if (result?.draft) {
       voiceDraft.value = result.draft;
       voiceDraftForm.value = buildVoiceDraftForm(result.draft);
+      resolveRoleFromDraft(result.draft);
   const startParts = extractDateTimeParts(result.draft.start_date);
   const dueParts = extractDateTimeParts(result.draft.due_date);
   if (startParts.date || startParts.time) {
@@ -225,6 +296,8 @@ const startVoiceRecording = async () => {
   dueDate.value = '';
   startTime.value = '09:00';
   dueTime.value = '23:59';
+  stopCountdown();
+  voiceCountdown.value = 0;
   // #ifdef H5
   if (!navigator.mediaDevices?.getUserMedia) {
     voiceError.value = '当前浏览器不支持录音';
@@ -246,6 +319,11 @@ const startVoiceRecording = async () => {
       };
       mediaRecorder.onstop = () => {
         stopVoiceStream();
+        if (cancelRequested) {
+          cancelRequested = false;
+          voiceRecording.value = false;
+          return;
+        }
         if (!chunks.length) {
           voiceError.value = '未获取到录音数据';
           voiceRecording.value = false;
@@ -256,6 +334,7 @@ const startVoiceRecording = async () => {
       };
       mediaRecorder.start();
       voiceRecording.value = true;
+      startCountdown();
       return;
     }
 
@@ -278,6 +357,7 @@ const startVoiceRecording = async () => {
     source.connect(processorNode);
     processorNode.connect(audioContext.destination);
     voiceRecording.value = true;
+    startCountdown();
   } catch (err) {
     voiceError.value = '无法获取麦克风权限';
     stopVoiceStream();
@@ -288,6 +368,10 @@ const startVoiceRecording = async () => {
     recorderManager = uni.getRecorderManager();
     recorderManager.onStop((res) => {
       voiceRecording.value = false;
+      if (cancelRequested) {
+        cancelRequested = false;
+        return;
+      }
       if (!res || !res.tempFilePath) {
         voiceError.value = '未获取到录音数据';
         return;
@@ -295,17 +379,20 @@ const startVoiceRecording = async () => {
       void handleVoiceFile(res.tempFilePath);
     });
     recorderManager.onError((err) => {
+      stopCountdown();
       voiceRecording.value = false;
       voiceError.value = (err && err.errMsg) || '录音失败';
     });
     recorderReady = true;
   }
-  recorderManager.start({ sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 96000, format: 'mp3' });
+  recorderManager.start({ sampleRate: 16000, numberOfChannels: 1, format: 'wav' });
   voiceRecording.value = true;
+  startCountdown();
   // #endif
 };
 
 const stopVoiceRecording = () => {
+  stopCountdown();
   // #ifndef H5
   if (recorderReady && recorderManager) {
     recorderManager.stop();
@@ -325,6 +412,11 @@ const stopVoiceRecording = () => {
       voiceRecording.value = false;
       return;
     }
+    if (cancelRequested) {
+      cancelRequested = false;
+      voiceRecording.value = false;
+      return;
+    }
     const wavBlob = encodeWav(pcm, inputSampleRate, 16000);
     void handleVoiceBlob(wavBlob);
     return;
@@ -332,6 +424,30 @@ const stopVoiceRecording = () => {
   if (mediaRecorder) {
     mediaRecorder.stop();
   }
+};
+
+const cancelRecording = () => {
+  if (!voiceRecording.value || voiceLoading.value) return;
+  cancelRequested = true;
+  stopCountdown();
+  voiceRecording.value = false;
+  // #ifndef H5
+  if (recorderReady && recorderManager) {
+    recorderManager.stop();
+  }
+  // #endif
+  // #ifdef H5
+  if (mediaRecorder) {
+    try { mediaRecorder.stop(); } catch (e) {}
+  } else if (voiceUsingWav.value) {
+    if (processorNode) processorNode.disconnect();
+    if (audioContext) audioContext.close();
+    processorNode = null;
+    audioContext = null;
+    stopVoiceStream();
+    pcmChunks = [];
+  }
+  // #endif
 };
 
 const toggleVoiceRecording = () => {
@@ -394,7 +510,8 @@ const confirmVoiceDraft = async () => {
       due_date: due || '',
       is_recurring: draft.is_recurring,
       recurring_rule: draft.recurring_rule || '',
-      role_id: draft.role_id || null,
+      role_id: roleOptions.value[selectedRoleIndex.value]?.value || null,
+      role_name: roleOptions.value[selectedRoleIndex.value]?.label || '',
       category_id: draft.category_id || null,
     });
     clearVoiceDraft();
@@ -470,13 +587,40 @@ const encodeWav = (buffer, inputRate, targetRate) => {
   }
   return new Blob([wavBuffer], { type: 'audio/wav' });
 };
+onShow(() => {
+  if (!ensureAuth()) return;
+  void loadRoles();
+});
 </script>
 
 <style scoped>
 .page {
-  padding: 12px;
+  padding: 12px 12px 88px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+.voice-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px calc(12px + env(safe-area-inset-bottom));
+  background: #fffdfd;
+  border-top: 1px solid rgba(110, 95, 116, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.voice-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
 }
 

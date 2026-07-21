@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     ALIYUN_NLS_REGION: str = "cn-shanghai"
     ALIYUN_NLS_ENDPOINT: str = "https://nls-gateway.cn-shanghai.aliyuncs.com"
     ALIYUN_NLS_SAMPLE_RATE: int = 0
+    # 微信小程序登录 (code2Session)
+    WECHAT_APPID: str = ""
+    WECHAT_APPSECRET: str = ""
 
     class Config:
         env_file = ".env"

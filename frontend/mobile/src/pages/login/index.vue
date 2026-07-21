@@ -33,6 +33,17 @@
         </view>
       </view>
 
+      <view class="agree-row">
+        <view class="checkbox" :class="{ checked: agreed }" @click="agreed = !agreed">
+          <text v-if="agreed" class="checkbox-tick">✓</text>
+        </view>
+        <view class="agree-text">
+          <text>我已阅读并同意</text>
+          <text class="link" @click="openAgreement">《用户服务协议》</text>
+          <text>和</text>
+          <text class="link" @click="openPrivacy">《隐私政策》</text>
+        </view>
+      </view>
       <text v-if="error" class="error">{{ error }}</text>
       <button class="btn primary" :disabled="submitting" @click="handleSubmit">
         {{ submitting ? (mode === 'login' ? '登录中...' : '注册中...') : (mode === 'login' ? '登录' : '注册') }}
@@ -41,6 +52,8 @@
         <text class="switch-text">{{ mode === 'login' ? '没有账号？' : '已有账号？' }}</text>
         <text class="switch-link" @click="toggleMode">{{ mode === 'login' ? '注册' : '登录' }}</text>
       </view>
+      <view class="wx-divider"><text class="wx-divider-text">或</text></view>
+      <button class="btn wx-btn" :disabled="submitting" @click="handleWechatLogin">微信登录</button>
     </view>
 
   </view>
@@ -49,8 +62,9 @@
 <script setup>
 import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { login, register } from '../../services/auth';
+import { login, register, wechatLogin } from '../../services/auth';
 import { setRoleId } from '../../utils/auth';
+import { fetchProfile } from '../../services/auth';
 import { getToken } from '../../services/api';
 import { isBeijingTimezone } from '../../utils/date';
 
@@ -63,6 +77,10 @@ const registerPassword = ref('');
 const registerConfirm = ref('');
 const submitting = ref(false);
 const error = ref('');
+const agreed = ref(false);
+
+const openAgreement = () => uni.navigateTo({ url: '/pages/agreement/index' });
+const openPrivacy = () => uni.navigateTo({ url: '/pages/privacy/index' });
 
 const afterLogin = async () => {
   setRoleId(null);
@@ -120,10 +138,51 @@ const handleRegister = async () => {
 };
 
 const handleSubmit = async () => {
+  if (!agreed.value) {
+    error.value = '请先阅读并同意《用户服务协议》和《隐私政策》';
+    return;
+  }
   if (mode.value === 'login') {
     await handleLogin();
   } else {
     await handleRegister();
+  }
+};
+
+const handleWechatLogin = async () => {
+  if (!agreed.value) {
+    error.value = '请先阅读并同意《用户服务协议》和《隐私政策》';
+    return;
+  }
+  submitting.value = true;
+  error.value = '';
+  try {
+    const loginRes = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: resolve,
+        fail: reject,
+      });
+    });
+    const code = loginRes && loginRes.code;
+    if (!code) {
+      error.value = '获取微信登录凭证失败';
+      return;
+    }
+    await wechatLogin(code);
+    try {
+      const profile = await fetchProfile();
+      if (profile && (profile.email || '').endsWith('@wechat.local')) {
+        submitting.value = false;
+        uni.reLaunch({ url: '/pages/complete-profile/index' });
+        return;
+      }
+    } catch (e) {}
+    await afterLogin();
+  } catch (err) {
+    error.value = (err && err.msg) || '微信登录失败';
+  } finally {
+    submitting.value = false;
   }
 };
 
@@ -187,5 +246,62 @@ onShow(() => {
 
 .switch-link {
   color: #b76e8a;
+}
+.agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(110, 95, 116, 0.6);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.checkbox.checked {
+  background: #b76e8a;
+  border-color: #b76e8a;
+}
+.checkbox-tick {
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+.agree-text {
+  font-size: 12px;
+  color: #2b2430;
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+.link {
+  color: #b76e8a;
+}
+.wx-divider {
+  display: flex;
+  align-items: center;
+  margin: 12px 0 8px;
+}
+.wx-divider::before,
+.wx-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(110, 95, 116, 0.3);
+}
+.wx-divider-text {
+  padding: 0 8px;
+  font-size: 12px;
+  color: #776b7f;
+}
+.wx-btn {
+  background: #07c160;
+  border-color: #07c160;
+  color: #fff;
 }
 </style>

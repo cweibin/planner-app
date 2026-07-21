@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
         Base.metadata.create_all(bind=engine)
         _ensure_task_columns()
         _ensure_habit_columns()
+        _ensure_user_columns()
         _ensure_role_columns()
         _ensure_default_admin_user()
         start_scheduler()
@@ -93,6 +94,19 @@ def _ensure_habit_columns() -> None:
     if "plan_end_date" not in columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE habits ADD COLUMN plan_end_date DATE"))
+
+
+def _ensure_user_columns() -> None:
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return
+    columns = {col["name"] for col in inspector.get_columns("users")}
+    if "wechat_openid" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN wechat_openid VARCHAR"))
+    if "unionid" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN unionid VARCHAR"))
 
 
 def _ensure_default_admin_user() -> None:

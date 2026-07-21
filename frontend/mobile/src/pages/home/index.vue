@@ -6,7 +6,8 @@
       <view class="welcome-left">
         <view class="welcome-row">
           <text class="welcome-title">早上好</text>
-          <text v-if="userDisplay" class="welcome-user">{{ userDisplay }}</text>
+          <text class="welcome-user profile-link" @click="openCompleteProfile">{{ userDisplay || '完善资料' }}</text>
+          <text class="welcome-edit" @click="openCompleteProfile">✎</text>
         </view>
       </view>
       <view class="welcome-right">
@@ -25,9 +26,9 @@
           <view class="date-input" @click="openDatePicker">{{ selectedDateLabel }}</view>
         </view>
         <view class="date-actions">
-          <button class="btn" size="mini" @click="shiftDate(-1)">&lt;</button>
-          <button class="btn primary" size="mini" @click="goToday">今天</button>
-          <button class="btn" size="mini" @click="shiftDate(1)">&gt;</button>
+          <view class="btn" @click="shiftDate(-1)">‹</view>
+          <view class="btn primary" @click="goToday">今天</view>
+          <view class="btn" @click="shiftDate(1)">›</view>
         </view>
       </view>
     </view>
@@ -590,6 +591,7 @@ const priorityLabel = computed(() => priorityOptions[selectedPriorityIndex.value
 const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? '全部');
 const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
 
+const openCompleteProfile = () => uni.navigateTo({ url: '/pages/complete-profile/index' });
 const openRoleManager = () => {
   const actions = ['新增角色', '重命名当前角色', '删除当前角色'];
   actionSheetOpen.value = true;
@@ -621,7 +623,9 @@ const roleMap = computed(() => {
 const userDisplay = computed(() => {
   const profile = userProfile.value;
   if (!profile) return '';
-  return profile.email || profile.phone_number || '';
+  const em = profile.email || '';
+  if (em && !em.endsWith('@wechat.local')) return em;
+  return profile.phone_number || '';
 });
 
 const sortTasks = (list) => {
@@ -1483,6 +1487,11 @@ const loadProfile = async () => {
 onShow(async () => {
   if (!ensureAuth()) return;
   await loadProfile();
+  const em = userProfile.value && userProfile.value.email;
+  if (em && em.endsWith('@wechat.local')) {
+    uni.reLaunch({ url: '/pages/complete-profile/index' });
+    return;
+  }
   const stored = uni.getStorageSync('planner_selected_date');
   if (stored) {
     selectedDate.value = stored;
@@ -1608,15 +1617,19 @@ onShow(async () => {
 }
 
 .date-input {
-  padding: 5px 8px;
-  border-radius: 10px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: 1px solid rgba(110, 95, 116, 0.4);
-  font-size: 12px;
-  text-align: center;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .date-actions {
@@ -1625,11 +1638,25 @@ onShow(async () => {
 }
 
 .date-actions .btn {
-  white-space: nowrap;
-  font-size: 12px;
-  text-align: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 13px;
   line-height: 1;
-  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  background: #fff;
+  color: #2b2430;
+  box-sizing: border-box;
+}
+.date-actions .btn.primary {
+  width: 46px;
+  background: #b76e8a;
+  border-color: #b76e8a;
+  color: #fff;
 }
 
 .filter-row {
@@ -2014,4 +2041,16 @@ onShow(async () => {
   color: #776b7f;
 }
 
+.profile-entry {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b76e8a;
+  text-align: right;
+}
+.profile-link { color: #b76e8a; font-weight: 600; }
+.welcome-edit {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #b76e8a;
+}
 </style>

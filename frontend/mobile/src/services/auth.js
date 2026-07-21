@@ -28,10 +28,26 @@ export async function fetchProfile() {
   return request({ path: '/auth/profile' });
 }
 
+export async function updateProfile(payload) {
+  return request({ path: '/auth/profile', method: 'PUT', data: payload });
+}
+
 export async function register(payload) {
   return request({
     path: '/auth/register',
     method: 'POST',
     data: payload,
   });
+}
+
+export async function wechatLogin(code) {
+  const data = await request({
+    path: '/auth/wechat-login',
+    method: 'POST',
+    data: { code },
+  });
+  if (data?.access_token) {
+    setToken(data.access_token);
+  }
+  return data;
 }

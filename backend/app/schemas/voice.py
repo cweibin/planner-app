@@ -28,6 +28,7 @@ class VoiceTaskDraft(BaseModel):
     remind_before: Optional[int] = None
     category_id: Optional[int] = None
     role_id: Optional[int] = None
+    role_name: Optional[str] = None
 
 
 class VoiceTaskResponse(BaseModel):

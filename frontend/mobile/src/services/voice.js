@@ -36,34 +36,50 @@ export async function createTaskFromVoiceBlob(blob) {
 
 export function createTaskFromVoiceFile(filePath) {
   // #ifndef H5
+  // 走 wx.request + base64，复用 request 合法域名（无需单独配置 uploadFile 域名）
   return new Promise((resolve, reject) => {
     const baseUrl = getBaseUrl();
     const token = getToken();
-    const header = {};
-    if (token) {
-      header.Authorization = `Bearer ${token}`;
-    }
-    uni.uploadFile({
-      url: `${baseUrl}/voice/tasks`,
+    const fs = uni.getFileSystemManager();
+    fs.readFile({
       filePath,
-      name: 'audio',
-      header,
-      success: (res) => {
-        let payload = null;
-        try {
-          payload = JSON.parse(res.data);
-        } catch (e) {
-          payload = null;
+      encoding: 'base64',
+      success: (fres) => {
+        const audioBase64 = fres.data;
+        const header = { 'Content-Type': 'application/json' };
+        if (token) {
+          header.Authorization = `Bearer ${token}`;
         }
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          const detail = payload && payload.detail;
-          reject(new Error(detail || `语音解析失败(${res.statusCode})`));
-          return;
-        }
-        resolve(payload);
+        uni.request({
+          url: `${baseUrl}/voice/tasks/base64`,
+          method: 'POST',
+          header,
+          data: {
+            audio_base64: audioBase64,
+            filename: 'voice.wav',
+            content_type: 'audio/wav',
+          },
+          success: (res) => {
+            let payload = null;
+            try {
+              payload = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+            } catch (e) {
+              payload = null;
+            }
+            if (res.statusCode < 200 || res.statusCode >= 300) {
+              const detail = payload && payload.detail;
+              reject(new Error(detail || `语音解析失败(${res.statusCode})`));
+              return;
+            }
+            resolve(payload);
+          },
+          fail: (err) => {
+            reject(new Error((err && err.errMsg) || '语音上传失败'));
+          },
+        });
       },
       fail: (err) => {
-        reject(new Error((err && err.errMsg) || '语音上传失败'));
+        reject(new Error((err && err.errMsg) || '读取录音文件失败'));
       },
     });
   });

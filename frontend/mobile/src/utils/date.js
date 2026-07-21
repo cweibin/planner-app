@@ -1,14 +1,35 @@
+const pad = (n) => String(n).padStart(2, '0');
+
+// 北京时间组件（UTC+8），不依赖 Intl.DateTimeFormat 的 timeZone（电脑端微信不可靠）
+function beijingParts(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  const t = new Date(date.getTime() + 8 * 3600 * 1000);
+  return {
+    y: t.getUTCFullYear(),
+    mo: t.getUTCMonth() + 1,
+    d: t.getUTCDate(),
+    h: t.getUTCHours(),
+    mi: t.getUTCMinutes(),
+  };
+}
+
+function ymd(date) {
+  const p = beijingParts(date);
+  return p ? `${p.y}-${pad(p.mo)}-${pad(p.d)}` : '';
+}
+
+function ymdhm(date) {
+  const p = beijingParts(date);
+  return p ? `${p.y}-${pad(p.mo)}-${pad(p.d)} ${pad(p.h)}:${pad(p.mi)}` : '';
+}
+
+function hm(date) {
+  const p = beijingParts(date);
+  return p ? `${pad(p.h)}:${pad(p.mi)}` : '';
+}
+
 export function formatDate(date) {
-  if (!(date instanceof Date)) {
-    return '';
-  }
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(date).replace(/\//g, '-');
+  return ymd(date);
 }
 
 export function parseDateTime(value) {
@@ -37,106 +58,45 @@ export function parseDateTimeFromUtc(value) {
 
 export function isBeijingTimezone() {
   if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz) return tz === 'Asia/Shanghai';
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) return tz === 'Asia/Shanghai';
+    } catch (e) {}
   }
   return new Date().getTimezoneOffset() === -480;
 }
 
 export function formatBeijingDateTime(value) {
   const date = parseDateTime(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return formatter.format(date).replace(/\//g, '-');
+  return date ? ymdhm(date) : '';
 }
 
 export function formatBeijingDateTimeFromUtc(value) {
   const date = parseDateTimeFromUtc(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return formatter.format(date).replace(/\//g, '-');
+  return date ? ymdhm(date) : '';
 }
 
 export function formatBeijingDate(value) {
   const date = parseDateTime(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(date).replace(/\//g, '-');
+  return date ? ymd(date) : '';
 }
 
 export function formatBeijingDateFromUtc(value) {
   const date = parseDateTimeFromUtc(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(date).replace(/\//g, '-');
+  return date ? ymd(date) : '';
 }
 
 export function formatBeijingTime(value) {
   const date = parseDateTime(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return formatter.format(date);
+  return date ? hm(date) : '';
 }
 
 export function getBeijingNowParts() {
-  const now = new Date();
-  const dateFormatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  const timeFormatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return {
-    date: dateFormatter.format(now).replace(/\//g, '-'),
-    time: timeFormatter.format(now),
-  };
+  const p = beijingParts(new Date());
+  return p ? { date: `${p.y}-${pad(p.mo)}-${pad(p.d)}`, time: `${pad(p.h)}:${pad(p.mi)}` } : { date: '', time: '' };
 }
 
 export function formatBeijingTimeFromUtc(value) {
   const date = parseDateTimeFromUtc(value);
-  if (!date) return '';
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return formatter.format(date);
+  return date ? hm(date) : '';
 }

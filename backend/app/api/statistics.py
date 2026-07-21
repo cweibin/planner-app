@@ -79,11 +79,25 @@ def time_statistics(
     today = date.today()
     start_date = today - timedelta(days=days - 1)
 
-    task_rows = (
+    # 已完成任务（按截止日统计）
+    done_rows = (
         db.query(func.date(Task.due_date), func.count(Task.id))
         .filter(
             Task.owner_id == current_user.id,
             Task.due_date.isnot(None),
+            Task.status == TaskStatus.done,
+            func.date(Task.due_date) >= start_date,
+        )
+        .group_by(func.date(Task.due_date))
+        .all()
+    )
+    # 未完成任务（待办+进行中，排除已取消）
+    pending_rows = (
+        db.query(func.date(Task.due_date), func.count(Task.id))
+        .filter(
+            Task.owner_id == current_user.id,
+            Task.due_date.isnot(None),
+            Task.status.in_([TaskStatus.todo, TaskStatus.in_progress]),
             func.date(Task.due_date) >= start_date,
         )
         .group_by(func.date(Task.due_date))
@@ -101,21 +115,26 @@ def time_statistics(
         .all()
     )
 
-    data: Dict[str, Dict[str, object]] = {}
+    done_by_date: Dict[str, int] = {str(d): c for d, c in done_rows}
+    pending_by_date: Dict[str, int] = {str(d): c for d, c in pending_rows}
+    habits_by_date: Dict[str, int] = {str(d): c for d, c in habit_rows}
 
-    for d, count in task_rows:
-        key = str(d)
-        if key not in data:
-            data[key] = {"date": key, "tasks_due": 0, "habit_checkins": 0}
-        data[key]["tasks_due"] = count
-
-    for d, count in habit_rows:
-        key = str(d)
-        if key not in data:
-            data[key] = {"date": key, "tasks_due": 0, "habit_checkins": 0}
-        data[key]["habit_checkins"] = count
-
-    timeline = [data[key] for key in sorted(data.keys())]
+    # 连续填充范围内的每一天（无数据补 0），保证日期对齐、数量正确
+    timeline: List[Dict[str, object]] = []
+    for i in range(days):
+        day = start_date + timedelta(days=i)
+        key = day.isoformat()
+        done = done_by_date.get(key, 0)
+        pending = pending_by_date.get(key, 0)
+        timeline.append(
+            {
+                "date": key,
+                "tasks_done": done,
+                "tasks_pending": pending,
+                "tasks_due": done + pending,
+                "habit_checkins": habits_by_date.get(key, 0),
+            }
+        )
 
     return {
         "days": days,

@@ -14,6 +14,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     phone_number = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
+    wechat_openid = Column(String, unique=True, index=True, nullable=True)
+    unionid = Column(String, unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(

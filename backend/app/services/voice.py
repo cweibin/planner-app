@@ -197,6 +197,40 @@ def _default_sample_rate(fmt: str) -> int:
     return settings.ALIYUN_NLS_SAMPLE_RATE or 16000
 
 
+def _normalize_wav_16k(audio_bytes: bytes) -> Optional[bytes]:
+    """把 wav 归一化为 16kHz / 单声道 / 16bit，确保阿里云 ASR 可解码。
+
+    部分机型 RecorderManager 即便指定 sampleRate=16000 仍输出 48kHz，阿里云
+    一句话识别只接受 8000/16000，这里用 stdlib audioop 重采样兜底。
+    """
+    try:
+        import wave, io, audioop
+        with wave.open(io.BytesIO(audio_bytes), "rb") as w:
+            nch = w.getnchannels()
+            sampw = w.getsampwidth()
+            sr = w.getframerate()
+            frames = w.readframes(w.getnframes())
+        if sr == 16000 and nch == 1 and sampw == 2:
+            return audio_bytes
+        if nch != 1:
+            frames = audioop.tomono(frames, sampw, 0.5, 0.5)
+        if sr != 16000:
+            frames, _ = audioop.ratecv(frames, sampw, 1, sr, 16000, None)
+        if sampw != 2:
+            frames = audioop.lin2lin(frames, sampw, 2)
+        out = io.BytesIO()
+        with wave.open(out, "wb") as w2:
+            w2.setnchannels(1)
+            w2.setsampwidth(2)
+            w2.setframerate(16000)
+            w2.writeframes(frames)
+        logger.info("wav 重采样 %dHz/%dch -> 16000/1", sr, nch)
+        return out.getvalue()
+    except Exception as e:
+        logger.warning("wav 重采样失败: %s", e)
+        return None
+
+
 async def _call_aliyun_asr(
     client: httpx.AsyncClient, url: str, params: Dict[str, str], token: str,
     audio_bytes: bytes,
@@ -215,6 +249,12 @@ async def transcribe_aliyun(
     token = await _get_aliyun_token()
     fmt = _guess_format(filename, content_type)
     sample_rate = settings.ALIYUN_NLS_SAMPLE_RATE or _default_sample_rate(fmt)
+    # wav 统一重采样到 16kHz，规避机型不遵守 sampleRate 的问题
+    if fmt == "wav":
+        norm = _normalize_wav_16k(audio_bytes)
+        if norm:
+            audio_bytes = norm
+            sample_rate = 16000
     endpoint = settings.ALIYUN_NLS_ENDPOINT.rstrip("/")
     url = f"{endpoint}/stream/v1/asr"
     params = {
@@ -244,7 +284,9 @@ async def transcribe_aliyun(
         resp.raise_for_status()
         data = resp.json()
     if data.get("status") != 20000000:
-        raise RuntimeError(data.get("message", "语音识别失败"))
+        msg = data.get("message", "语音识别失败")
+        logger.error("Aliyun ASR 失败 status=%s msg=%s", data.get("status"), msg)
+        raise RuntimeError(msg)
     return data.get("result", "").strip()
 
 
@@ -274,7 +316,7 @@ def _extract_json_block(text: str) -> Dict[str, Any]:
             return {}
 
 
-async def extract_task_with_glm(transcript: str) -> Dict[str, Any]:
+async def extract_task_with_glm(transcript: str, role_names: Optional[list] = None) -> Dict[str, Any]:
     if not settings.GLM_API_KEY:
         raise RuntimeError("GLM API Key 未配置")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -294,7 +336,8 @@ async def extract_task_with_glm(transcript: str) -> Dict[str, Any]:
         "due_date(ISO8601或null), priority(high|medium|low), "
         "status(todo|in_progress|done|cancelled), "
         "is_recurring(true|false), recurring_rule(daily|weekly|monthly|null), "
-        "remind_before(分钟整数或null)。"
+        "remind_before(分钟整数或null), role_name(可选，从用户已有的角色清单中选择最匹配的一个角色名称；若都不匹配或无明显归属则返回 null)。"
+        f"用户已有角色清单：{role_names or []}。role_name 必须是该清单中某一项的精确名称，否则返回 null。"
         f"当前时间：{now}。如果语音里没有日期时间，请返回 null。"
     )
     payload = {
@@ -339,6 +382,7 @@ def normalize_task_payload(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
         "remind_before": raw.get("remind_before"),
         "category_id": raw.get("category_id"),
         "role_id": raw.get("role_id"),
+        "role_name": raw.get("role_name"),
     }
     if payload["priority"] not in allowed_priorities:
         payload["priority"] = "medium"
