@@ -6,10 +6,10 @@
     <!-- 上方：每日任务完成情况（已完成/未完成 堆叠柱状图） -->
     <view class="card">
       <view class="chart-head">
-        <text class="section-title">每日任务完成情况</text>
+        <text class="section-title">{{ t('stat.daily.title') }}</text>
         <view class="legend">
-          <view class="legend-item"><view class="legend-dot done" /><text class="legend-text">已完成</text></view>
-          <view class="legend-item"><view class="legend-dot pending" /><text class="legend-text">未完成</text></view>
+          <view class="legend-item"><view class="legend-dot done" /><text class="legend-text">{{ t('stat.legend.done') }}</text></view>
+          <view class="legend-item"><view class="legend-dot pending" /><text class="legend-text">{{ t('stat.legend.pending') }}</text></view>
         </view>
       </view>
       <view class="chart">
@@ -27,10 +27,10 @@
     <!-- 下方：完成趋势（折线图） -->
     <view class="card">
       <view class="chart-head">
-        <text class="section-title">完成趋势</text>
+        <text class="section-title">{{ t('stat.trend.title') }}</text>
         <view class="legend">
-          <view class="legend-item"><view class="legend-dot done" /><text class="legend-text">已完成任务</text></view>
-          <view class="legend-item"><view class="legend-dot habits" /><text class="legend-text">习惯打卡</text></view>
+          <view class="legend-item"><view class="legend-dot done" /><text class="legend-text">{{ t('stat.legend.completed') }}</text></view>
+          <view class="legend-item"><view class="legend-dot habits" /><text class="legend-text">{{ t('stat.legend.habits') }}</text></view>
         </view>
       </view>
       <view class="trend">
@@ -59,6 +59,7 @@ import { ensureAuth } from '../../utils/auth';
 import { fetchTimeStats, fetchTrends } from '../../services/stats';
 import LogoutButton from '../../components/LogoutButton.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
+import { t, initLocale } from '../../locale';
 
 const taskStats = ref([]);
 const trendStats = ref([]);
@@ -92,6 +93,7 @@ const loadStats = async () => {
 
 onShow(() => {
   if (!ensureAuth()) return;
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.stats') });
   void loadStats();
 });
 </script>

@@ -28,6 +28,13 @@
 </template>
 
 <script setup>
+import { onShow } from '@dcloudio/uni-app';
+import { t, initLocale } from '../../locale';
+
+onShow(() => {
+  initLocale();
+  uni.setNavigationBarTitle({ title: t('nav.agreement') });
+});
 </script>
 
 <style scoped>

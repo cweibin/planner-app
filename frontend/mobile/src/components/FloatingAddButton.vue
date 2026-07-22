@@ -6,6 +6,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { t } from '../locale';
 const props = defineProps({
   disable: { type: Boolean, default: false },
 });
@@ -25,7 +26,7 @@ const openAdd = () => {
     return;
   }
   uni.showActionSheet({
-    itemList: ['直接新建', '语音新建'],
+    itemList: [t('add.direct'), t('add.voice')],
     success: (res) => {
       if (res.tapIndex === 0) {
         uni.navigateTo({ url: '/pages/task-create/index' });

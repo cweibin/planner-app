@@ -5,30 +5,31 @@
     <view class="welcome card">
       <view class="welcome-left">
         <view class="welcome-row">
-          <text class="welcome-title">早上好</text>
-          <text v-if="userDisplay" class="welcome-user">{{ userDisplay }}</text>
+          <text class="welcome-title">{{ t('greeting') }}</text>
+          <text class="welcome-user profile-link" @click="openCompleteProfile">{{ userDisplay || t('complete.profile') }}</text>
+          <text class="welcome-edit" @click="openCompleteProfile">✎</text>
         </view>
       </view>
       <view class="welcome-right">
         <view class="role-inline">
-          <text class="label">角色</text>
+          <text class="label">{{ t('role') }}</text>
           <picker :range="roleOptions" range-key="label" @change="onRoleChange">
             <view class="picker-input">{{ roleLabel }}</view>
           </picker>
-          <view class="role-manage" @click="openRoleManager">管理</view>
+          <view class="role-manage" @click="openRoleManager">{{ t('role.manage') }}</view>
         </view>
       </view>
     </view>
     <view class="card header">
       <view class="month-bar">
         <view class="month-select">
-          <text class="month-hint">选择月份：</text>
+          <text class="month-hint">{{ t('select.month') }}</text>
           <view class="month-input" @click="openMonthPicker">{{ monthDisplay }}</view>
         </view>
         <view class="month-actions">
-          <button class="btn" size="mini" @click="shiftMonth(-1)">&lt;</button>
-          <button class="btn primary" size="mini" @click="goCurrentMonth">本月</button>
-          <button class="btn" size="mini" @click="shiftMonth(1)">&gt;</button>
+          <view class="btn" @click="shiftMonth(-1)">‹</view>
+          <view class="btn primary" @click="goCurrentMonth">{{ t('this.month') }}</view>
+          <view class="btn" @click="shiftMonth(1)">›</view>
         </view>
       </view>
     </view>
@@ -53,17 +54,17 @@
       </view>
       <view class="legend">
         <text class="legend-dot" />
-        <text class="legend-text">已完成 / 总任务数</text>
+        <text class="legend-text">{{ t('calendar.legend') }}</text>
       </view>
     </view>
 
     <view v-if="showMonthPicker" class="modal-mask" @click="closeMonthPicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择月份</text>
+          <text class="modal-title">{{ t('select.month') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closeMonthPicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmMonthPicker">确定</button>
+            <button class="btn" size="mini" @click="closeMonthPicker">{{ t('cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmMonthPicker">{{ t('confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -100,8 +101,9 @@ import { formatBeijingDate, formatBeijingDateFromUtc, formatDate } from '../../u
 import LogoutButton from '../../components/LogoutButton.vue';
 import PromptDialog from '../../components/PromptDialog.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
+import { t, locale, initLocale } from '../../locale';
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+const weekDays = computed(() => [t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')]);
 const todayStr = formatDate(new Date());
 const currentMonth = ref(new Date());
 const selectedDate = ref(todayStr);
@@ -112,7 +114,7 @@ const tasksByStatus = ref({
   cancelled: []
 });
 const loading = ref(false);
-const roleOptions = ref([{ label: '全部', value: null }]);
+const roleOptions = ref([{ label: t('role.all'), value: null }]);
 const selectedRoleIndex = ref(0);
 const userProfile = ref(null);
 const actionSheetOpen = ref(false);
@@ -122,15 +124,12 @@ const promptPlaceholder = ref('');
 const promptValue = ref('');
 const promptType = ref('');
 
-const currentMonthLabel = computed(() => {
-  const date = currentMonth.value;
-  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-});
+const currentMonthLabel = computed(() => formatMonthLabel(currentMonth.value));
 
 const monthDisplay = computed(() => currentMonthLabel.value);
 
 const selectedRoleId = computed(() => roleOptions.value[selectedRoleIndex.value]?.value ?? null);
-const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
+const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? t('role.all'));
 const userDisplay = computed(() => {
   const profile = userProfile.value;
   if (!profile) return '';
@@ -190,7 +189,7 @@ const calendarDays = computed(() => {
     const completionBase = counts.todo + counts.inProgress + counts.done;
     const isFullDone = !isFuture && completionBase > 0 && counts.done === completionBase;
     const ratioText = isFuture
-      ? `待办 ${counts.todo}`
+      ? `${t('status.todo')} ${counts.todo}`
       : `${counts.done}/${completionBase}`;
     days.push({
       key: dateStr,
@@ -228,7 +227,13 @@ const formatMonthValue = (date) => {
   return `${year}-${month}`;
 };
 
-const formatMonthLabel = (date) => `${date.getFullYear()}年${date.getMonth() + 1}月`;
+const monthKeys = ['month.jan', 'month.feb', 'month.mar', 'month.apr', 'month.may', 'month.jun', 'month.jul', 'month.aug', 'month.sep', 'month.oct', 'month.nov', 'month.dec'];
+
+const formatMonthLabel = (date) => {
+  const m = date.getMonth();
+  if (locale.value === 'en') return `${t(monthKeys[m])} ${date.getFullYear()}`;
+  return `${date.getFullYear()}年${t(monthKeys[m])}`;
+};
 
 const parseMonthValue = (value) => {
   const parts = value.split('-').map((item) => Number(item));
@@ -467,15 +472,21 @@ watch(currentMonth, () => {
   void refresh();
 });
 
+watch(locale, () => {
+  if (showMonthPicker.value) {
+    monthList.value = buildMonthList(currentMonth.value);
+  }
+});
+
 const loadRoles = async () => {
   try {
     const data = await fetchRoles();
     roleOptions.value = [
-      { label: '全部', value: null },
+      { label: t('role.all'), value: null },
       ...data.map((role) => ({ label: role.name, value: role.id })),
     ];
   } catch {
-    roleOptions.value = [{ label: '全部', value: null }];
+    roleOptions.value = [{ label: t('role.all'), value: null }];
   }
 };
 
@@ -494,6 +505,7 @@ const loadProfile = async () => {
 };
 
 onShow(async () => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.calendar') });
   if (!ensureAuth()) return;
   await loadProfile();
   await loadRoles();
@@ -511,6 +523,10 @@ onShow(async () => {
 </script>
 
 <style scoped>
+.card {
+  padding: 12px;
+}
+
 .page {
   padding: 10px;
   display: flex;
@@ -602,29 +618,58 @@ onShow(async () => {
 }
 
 .month-actions .btn {
-  font-size: 12px;
-  padding: 6px 10px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 13px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  background: #fff;
+  color: #2b2430;
+  box-sizing: border-box;
+}
+
+.month-actions .btn.primary {
+  width: 46px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #b76e8a;
+  border-color: #b76e8a;
+  color: #fff;
 }
 
 .month-select {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .month-hint {
-  font-size: 12px;
+  font-size: 10px;
   color: #776b7f;
   white-space: nowrap;
 }
 
 .month-input {
-  padding: 6px 10px;
-  border-radius: 10px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: 1px solid rgba(110, 95, 116, 0.4);
-  font-size: 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .calendar-header {
@@ -756,4 +801,6 @@ onShow(async () => {
   text-align: center;
   font-size: 13px;
 }
+.profile-link { color: #b76e8a; font-weight: 600; }
+.welcome-edit { margin-left: 4px; font-size: 13px; color: #b76e8a; }
 </style>

@@ -3,7 +3,7 @@
     <LogoutButton />
     <view class="card">
       <view v-if="voiceUsingWav && !voiceLoading" class="voice-tip">
-        当前浏览器不支持 OGG/OPUS，已切换为 WAV 录音。
+        {{ t('voice.tip.wav') }}
       </view>
       <view v-if="voiceError" class="voice-error">{{ voiceError }}</view>
       <view v-if="voiceTranscript" class="voice-transcript">识别结果：{{ voiceTranscript }}</view>
@@ -11,8 +11,8 @@
         <view class="voice-draft-title">识别到新任务（去创建页确认）</view>
         <view class="voice-draft-content">
           <view class="voice-draft-field">
-            <text class="voice-draft-label">标题</text>
-            <input class="voice-draft-input" v-model="voiceDraftForm.title" placeholder="请输入任务标题" />
+            <text class="voice-draft-label">{{ t('title') }}</text>
+            <input class="voice-draft-input" v-model="voiceDraftForm.title" :placeholder="t('title.empty')" />
           </view>
         <view class="voice-draft-field">
           <text class="voice-draft-label">开始时间</text>
@@ -45,25 +45,25 @@
           </view>
         </view>
           <view class="voice-draft-field">
-            <text class="voice-draft-label">备注</text>
+            <text class="voice-draft-label">{{ t('voice.note') }}</text>
             <textarea
               class="voice-draft-textarea"
               v-model="voiceDraftForm.description"
-              placeholder="可选"
+              :placeholder="t('voice.note.ph')"
               auto-height
             />
           </view>
           <view class="voice-draft-field">
-            <text class="voice-draft-label">角色</text>
+            <text class="voice-draft-label">{{ t('voice.role') }}</text>
             <picker :range="roleOptions" range-key="label" :value="selectedRoleIndex" @change="onRoleChange">
               <view class="picker-input">{{ roleOptions[selectedRoleIndex]?.label || '未指定' }}</view>
             </picker>
-            <text v-if="voiceDraftForm.roleName && roleOptions[selectedRoleIndex]?.value === null" class="voice-role-hint">识别：{{ voiceDraftForm.roleName }}（可在上方选择已有角色）</text>
+            <text v-if="voiceDraftForm.roleName && roleOptions[selectedRoleIndex]?.value === null" class="voice-role-hint">{{ t('voice.role.hint') }}{{ voiceDraftForm.roleName }}{{ t('voice.role.hint.suffix') }}</text>
           </view>
         </view>
         <view class="voice-draft-actions">
-          <button class="btn" size="mini" @click="clearVoiceDraft">取消</button>
-          <button class="btn primary" size="mini" @click="confirmVoiceDraft">去创建页</button>
+          <button class="btn" size="mini" @click="clearVoiceDraft">{{ t('cancel') }}</button>
+          <button class="btn primary" size="mini" @click="confirmVoiceDraft">{{ t('voice.go.create') }}</button>
         </view>
       </view>
       <view v-if="voiceCandidates.length" class="voice-candidates">
@@ -84,12 +84,12 @@
     <view class="voice-bar">
       <view class="voice-bar-inner">
         <button class="btn primary" size="mini" :disabled="voiceLoading" @click="toggleVoiceRecording">
-          {{ voiceRecording ? '停止录音 (' + voiceCountdown + 's)' : '语音输入' }}
+          {{ voiceRecording ? t('voice.stop') + ' (' + voiceCountdown + 's)' : t('voice.input') }}
         </button>
         <button v-if="voiceRecording" class="btn" size="mini" @click="cancelRecording">取消</button>
       </view>
-      <text v-if="voiceLoading" class="voice-status">识别中...</text>
-      <text v-else-if="voiceRecording" class="voice-status">录音中 {{ voiceCountdown }}s</text>
+      <text v-if="voiceLoading" class="voice-status">{{ t('voice.recognizing') }}</text>
+      <text v-else-if="voiceRecording" class="voice-status">{{ t('voice.recording') }} {{ voiceCountdown }}s</text>
     </view>
   </view>
 </template>
@@ -100,6 +100,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { createTaskFromVoiceBlob, createTaskFromVoiceFile } from '../../services/voice';
 import { fetchRoles } from '../../services/roles';
 import { ensureAuth } from '../../utils/auth';
+import { t, initLocale } from '../../locale';
 import { updateTaskStatus } from '../../services/tasks';
 import { formatBeijingDate, formatBeijingTime, formatDate, getBeijingNowParts } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
@@ -589,6 +590,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
 };
 onShow(() => {
   if (!ensureAuth()) return;
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.voice.create') });
   void loadRoles();
 });
 </script>

@@ -19,6 +19,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { t, locale, initLocale } from '../locale';
 
 const props = defineProps({
   visible: { type: Boolean, default: false },

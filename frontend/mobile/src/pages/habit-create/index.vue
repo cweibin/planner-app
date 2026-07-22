@@ -2,9 +2,9 @@
   <view class="page">
     <LogoutButton />
     <view class="card">
-      <text class="section-title">{{ isEditing ? '编辑习惯' : '新增习惯' }}</text>
+      <text class="section-title">{{ isEditing ? t('habit.edit.title') : t('habit.create.title') }}</text>
       <view class="form-field">
-        <text class="label">习惯名称 *</text>
+        <text class="label">{{ t('habit.name.required') }}</text>
         <textarea
           class="textarea name-textarea"
           :value="name"
@@ -14,11 +14,11 @@
           @focus="onFocusName"
           @blur="onBlurName"
           @input="onNameInput"
-          placeholder="例如：晨跑 / 阅读"
+          :placeholder="t('habit.name.ph')"
         />
       </view>
       <view class="form-field">
-        <text class="label">描述</text>
+        <text class="label">{{ t('habit.desc') }}</text>
         <textarea
           class="textarea"
           :value="description"
@@ -27,36 +27,36 @@
           @focus="onFocusDesc"
           @blur="onBlurDesc"
           @input="onDescriptionInput"
-          placeholder="补充说明（可选）"
+          :placeholder="t('task.desc.ph')"
         />
       </view>
       <view class="form-field">
-        <text class="label">目标类型</text>
+        <text class="label">{{ t('habit.target.type') }}</text>
         <picker :range="targetTypeOptions" range-key="label" :value="targetTypeIndex" @change="onTargetTypeChange">
           <view class="picker-input">{{ targetTypeLabel }}</view>
         </picker>
       </view>
       <view class="form-field">
-        <text class="label">目标次数</text>
+        <text class="label">{{ t('habit.target.count') }}</text>
         <picker :range="targetCountOptions" :value="targetCountIndex" @change="onTargetCountChange">
           <view class="picker-input">{{ targetCountOptions[targetCountIndex] || 1 }}</view>
         </picker>
       </view>
       <view class="form-field">
-        <text class="label">计划日期</text>
+        <text class="label">{{ t('habit.plan.date') }}</text>
         <view class="picker-row">
           <picker mode="date" :value="planStart" @change="onPlanStartChange">
-            <view class="picker-input">{{ planStart || '开始日期' }}</view>
+            <view class="picker-input">{{ planStart || t('habit.plan.start.ph') }}</view>
           </picker>
           <picker mode="date" :value="planEnd" @change="onPlanEndChange">
-            <view class="picker-input">{{ planEnd || '结束日期(可选)' }}</view>
+            <view class="picker-input">{{ planEnd || t('habit.plan.end.ph') }}</view>
           </picker>
         </view>
       </view>
       <view class="action-row">
-        <button class="btn" size="mini" @click="cancel">取消</button>
+        <button class="btn" size="mini" @click="cancel">{{ t('task.cancel') }}</button>
         <button class="btn primary" size="mini" :disabled="submitting" @click="submit">
-          {{ submitting ? '保存中...' : '保存' }}
+          {{ submitting ? t('task.saving') : t('task.save') }}
         </button>
       </view>
     </view>
@@ -74,8 +74,8 @@ import LogoutButton from '../../components/LogoutButton.vue';
 const name = ref('');
 const description = ref('');
 const targetTypeOptions = [
-  { label: '每天', value: 'daily' },
-  { label: '每周', value: 'weekly' },
+  { label: t('every.day'), value: 'daily' },
+  { label: t('every.week'), value: 'weekly' },
 ];
 const targetTypeIndex = ref(0);
 const targetCountOptions = Array.from({ length: 20 }, (_, idx) => idx + 1);
@@ -145,16 +145,16 @@ const cancel = () => {
 const submit = async () => {
   const trimmed = name.value.trim();
   if (!trimmed) {
-    uni.showToast({ title: '请输入习惯名称', icon: 'none' });
+    uni.showToast({ title: t('habit.name.empty'), icon: 'none' });
     return;
   }
   const count = Number(targetCountOptions[targetCountIndex.value] || 1);
   if (!Number.isFinite(count) || count <= 0) {
-    uni.showToast({ title: '目标次数需大于 0', icon: 'none' });
+    uni.showToast({ title: t('habit.target.count.empty'), icon: 'none' });
     return;
   }
   if (planStart.value && planEnd.value && planEnd.value < planStart.value) {
-    uni.showToast({ title: '结束日期不能早于开始日期', icon: 'none' });
+    uni.showToast({ title: t('habit.end.before.start'), icon: 'none' });
     return;
   }
 
@@ -170,16 +170,16 @@ const submit = async () => {
     if (planEnd.value) payload.plan_end_date = planEnd.value;
     if (isEditing.value && habitId.value) {
       await updateHabit(habitId.value, payload);
-      uni.showToast({ title: '已更新', icon: 'success' });
+      uni.showToast({ title: t('habit.updated'), icon: 'success' });
     } else {
       await createHabit(payload);
-      uni.showToast({ title: '已创建', icon: 'success' });
+      uni.showToast({ title: t('task.created'), icon: 'success' });
     }
     setTimeout(() => {
       uni.switchTab({ url: '/pages/habits/index' });
     }, 300);
   } catch {
-    uni.showToast({ title: isEditing.value ? '更新失败' : '创建失败', icon: 'none' });
+    uni.showToast({ title: isEditing.value ? t('task.update.fail') : t('task.create.fail'), icon: 'none' });
   } finally {
     submitting.value = false;
   }
@@ -199,7 +199,7 @@ const loadHabit = async () => {
     planStart.value = habit?.plan_start_date || '';
     planEnd.value = habit?.plan_end_date || '';
   } catch {
-    uni.showToast({ title: '加载失败', icon: 'none' });
+    uni.showToast({ title: t('habit.load.fail'), icon: 'none' });
   }
 };
 
@@ -210,6 +210,7 @@ onLoad((query) => {
 });
 
 onShow(async () => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.habit.create') });
   if (!ensureAuth()) return;
   if (isEditing.value) {
     await loadHabit();

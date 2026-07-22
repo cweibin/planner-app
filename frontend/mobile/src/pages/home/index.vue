@@ -5,16 +5,16 @@
     <view class="welcome card">
       <view class="welcome-left">
         <view class="welcome-row">
-          <text class="welcome-title">早上好</text>
-          <text class="welcome-user profile-link" @click="openCompleteProfile">{{ userDisplay || '完善资料' }}</text>
+          <text class="welcome-title">{{ t('greeting') }}</text>
+          <text class="welcome-user profile-link" @click="openCompleteProfile">{{ userDisplay || t('complete.profile') }}</text>
           <text class="welcome-edit" @click="openCompleteProfile">✎</text>
         </view>
       </view>
       <view class="welcome-right">
         <view class="role-inline">
-          <text class="label">角色</text>
+          <text class="label">{{ t('role') }}</text>
           <view class="picker-input" @click="openRolePicker">{{ roleLabel }}</view>
-          <view class="role-manage" @click="openRoleManager">管理</view>
+          <view class="role-manage" @click="openRoleManager">{{ t('role.manage') }}</view>
         </view>
       </view>
     </view>
@@ -22,12 +22,12 @@
     <view class="card">
       <view class="date-row">
         <view class="date-left">
-          <text class="label">选择日期：</text>
+          <text class="label">{{ t('select.date') }}</text>
           <view class="date-input" @click="openDatePicker">{{ selectedDateLabel }}</view>
         </view>
         <view class="date-actions">
           <view class="btn" @click="shiftDate(-1)">‹</view>
-          <view class="btn primary" @click="goToday">今天</view>
+          <view class="btn primary" @click="goToday">{{ t('today') }}</view>
           <view class="btn" @click="shiftDate(1)">›</view>
         </view>
       </view>
@@ -43,8 +43,8 @@
         </view>
       </view>
       <view class="search-row">
-        <input class="search-input" v-model="searchText" placeholder="搜索任务" />
-        <button class="btn" size="mini" @click="resetFilters">清除筛选</button>
+        <input class="search-input" v-model="searchText" :placeholder="t('search.task')" />
+        <button class="btn" size="mini" @click="resetFilters">{{ t('clear.filter') }}</button>
       </view>
     </view>
 
@@ -53,10 +53,10 @@
     <view v-if="showDatePicker" class="modal-mask" @click="closeDatePicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择日期</text>
+          <text class="modal-title">{{ t('modal.select.date') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closeDatePicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmDatePicker">确定</button>
+            <button class="btn" size="mini" @click="closeDatePicker">{{ t('modal.cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmDatePicker">{{ t('modal.confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -75,10 +75,10 @@
     <view v-if="showRolePicker" class="modal-mask" @click="closeRolePicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择角色</text>
+          <text class="modal-title">{{ t('modal.select.role') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closeRolePicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmRolePicker">确定</button>
+            <button class="btn" size="mini" @click="closeRolePicker">{{ t('modal.cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmRolePicker">{{ t('modal.confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -97,10 +97,10 @@
     <view v-if="showPriorityPicker" class="modal-mask" @click="closePriorityPicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择优先级</text>
+          <text class="modal-title">{{ t('modal.select.priority') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closePriorityPicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmPriorityPicker">确定</button>
+            <button class="btn" size="mini" @click="closePriorityPicker">{{ t('modal.cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmPriorityPicker">{{ t('modal.confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -119,10 +119,10 @@
     <view v-if="showCategoryPicker" class="modal-mask" @click="closeCategoryPicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择分类</text>
+          <text class="modal-title">{{ t('modal.select.category') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closeCategoryPicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmCategoryPicker">确定</button>
+            <button class="btn" size="mini" @click="closeCategoryPicker">{{ t('modal.cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmCategoryPicker">{{ t('modal.confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -157,8 +157,8 @@
         @click="toggleSection('yesterday')"
       >
         <view class="section-left">
-          <text class="section-title">昨天剩余</text>
-          <text class="section-meta">{{ yesterdayRemainingView.length }} 项</text>
+          <text class="section-title">{{ t('home.yesterday') }}</text>
+          <text class="section-meta">{{ yesterdayRemainingView.length }} {{ t('item.count') }}</text>
         </view>
         <text class="section-toggle">{{ collapsedSections.yesterday ? '▼' : '▲' }}</text>
       </view>
@@ -176,15 +176,15 @@
           <view v-if="canSwipe(task)" class="swipe-actions">
             <view class="swipe-btn view" @click.stop="openTask(task.id)">
               <text class="swipe-icon">🔍</text>
-              <text class="swipe-text">查看</text>
+              <text class="swipe-text">{{ t('swipe.view') }}</text>
             </view>
             <view class="swipe-btn done" @click.stop="markDone(task)">
               <text class="swipe-icon">✓</text>
-              <text class="swipe-text">完成</text>
+              <text class="swipe-text">{{ t('swipe.complete') }}</text>
             </view>
             <view class="swipe-btn cancel" @click.stop="markCancelled(task)">
               <text class="swipe-icon">✕</text>
-              <text class="swipe-text">取消</text>
+              <text class="swipe-text">{{ t('swipe.cancel') }}</text>
             </view>
           </view>
           <view
@@ -196,7 +196,7 @@
           >
             <view class="task-info">
               <text class="task-title">{{ task.title }}</text>
-              <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+              <text class="task-meta">{{ t('home.due') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
             </view>
             <view class="task-tags">
               <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
@@ -210,8 +210,8 @@
 
     <view class="card">
       <view class="section-header">
-        <text class="section-title">今日任务</text>
-        <text class="section-meta">{{ todayTotalCount }} 项</text>
+        <text class="section-title">{{ t('home.today') }}</text>
+        <text class="section-meta">{{ todayTotalCount }} {{ t('item.count') }}</text>
       </view>
 
       <view class="subsection">
@@ -221,8 +221,8 @@
           @click="toggleSection('todayTodo')"
         >
           <view class="section-left">
-            <text class="section-title">今日待办</text>
-            <text class="section-meta">{{ todayTodoView.length }} 项</text>
+            <text class="section-title">{{ t('home.today.todo') }}</text>
+            <text class="section-meta">{{ todayTodoView.length }} {{ t('item.count') }}</text>
           </view>
           <text class="section-toggle">{{ collapsedSections.todayTodo ? '▼' : '▲' }}</text>
         </view>
@@ -240,15 +240,15 @@
             <view v-if="canSwipe(task)" class="swipe-actions">
               <view class="swipe-btn view" @click.stop="openTask(task.id)">
                 <text class="swipe-icon">🔍</text>
-                <text class="swipe-text">查看</text>
+                <text class="swipe-text">{{ t('swipe.view') }}</text>
               </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
-                <text class="swipe-text">完成</text>
+                <text class="swipe-text">{{ t('swipe.complete') }}</text>
               </view>
               <view class="swipe-btn cancel" @click.stop="markCancelled(task)">
                 <text class="swipe-icon">✕</text>
-                <text class="swipe-text">取消</text>
+                <text class="swipe-text">{{ t('swipe.cancel') }}</text>
               </view>
             </view>
             <view
@@ -260,7 +260,7 @@
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
-                <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+                <text class="task-meta">{{ t('home.due') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
               </view>
               <view class="task-tags">
                 <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
@@ -269,7 +269,7 @@
               </view>
             </view>
           </view>
-          <view v-if="!todayTodoView.length" class="empty">暂无任务</view>
+          <view v-if="!todayTodoView.length" class="empty">{{ t('home.no.tasks') }}</view>
         </view>
       </view>
 
@@ -280,8 +280,8 @@
           @click="toggleSection('todayInProgress')"
         >
           <view class="section-left">
-            <text class="section-title">进行中</text>
-            <text class="section-meta">{{ todayInProgressView.length }} 项</text>
+            <text class="section-title">{{ t('home.in_progress') }}</text>
+            <text class="section-meta">{{ todayInProgressView.length }} {{ t('item.count') }}</text>
           </view>
           <text class="section-toggle">{{ collapsedSections.todayInProgress ? '▼' : '▲' }}</text>
         </view>
@@ -299,15 +299,15 @@
             <view v-if="canSwipe(task)" class="swipe-actions">
               <view class="swipe-btn view" @click.stop="openTask(task.id)">
                 <text class="swipe-icon">🔍</text>
-                <text class="swipe-text">查看</text>
+                <text class="swipe-text">{{ t('swipe.view') }}</text>
               </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
-                <text class="swipe-text">完成</text>
+                <text class="swipe-text">{{ t('swipe.complete') }}</text>
               </view>
               <view class="swipe-btn cancel" @click.stop="markCancelled(task)">
                 <text class="swipe-icon">✕</text>
-                <text class="swipe-text">取消</text>
+                <text class="swipe-text">{{ t('swipe.cancel') }}</text>
               </view>
             </view>
             <view
@@ -319,7 +319,7 @@
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
-                <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+                <text class="task-meta">{{ t('home.due') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
               </view>
               <view class="task-tags">
                 <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
@@ -328,7 +328,7 @@
               </view>
             </view>
           </view>
-          <view v-if="!todayInProgressView.length" class="empty">暂无任务</view>
+          <view v-if="!todayInProgressView.length" class="empty">{{ t('home.no.tasks') }}</view>
         </view>
       </view>
 
@@ -339,8 +339,8 @@
           @click="toggleSection('todayDone')"
         >
           <view class="section-left">
-            <text class="section-title">已完成</text>
-            <text class="section-meta">{{ todayDoneView.length }} 项</text>
+            <text class="section-title">{{ t('home.done') }}</text>
+            <text class="section-meta">{{ todayDoneView.length }} {{ t('item.count') }}</text>
           </view>
           <text class="section-toggle">{{ collapsedSections.todayDone ? '▼' : '▲' }}</text>
         </view>
@@ -358,15 +358,15 @@
             <view v-if="canSwipe(task)" class="swipe-actions">
               <view class="swipe-btn view" @click.stop="openTask(task.id)">
                 <text class="swipe-icon">🔍</text>
-                <text class="swipe-text">查看</text>
+                <text class="swipe-text">{{ t('swipe.view') }}</text>
               </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
-                <text class="swipe-text">完成</text>
+                <text class="swipe-text">{{ t('swipe.complete') }}</text>
               </view>
               <view class="swipe-btn cancel" @click.stop="markCancelled(task)">
                 <text class="swipe-icon">✕</text>
-                <text class="swipe-text">取消</text>
+                <text class="swipe-text">{{ t('swipe.cancel') }}</text>
               </view>
             </view>
             <view
@@ -378,7 +378,7 @@
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
-                <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+                <text class="task-meta">{{ t('home.due') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
               </view>
               <view class="task-tags">
                 <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
@@ -387,7 +387,7 @@
               </view>
             </view>
           </view>
-          <view v-if="!todayDoneView.length" class="empty">暂无任务</view>
+          <view v-if="!todayDoneView.length" class="empty">{{ t('home.no.tasks') }}</view>
         </view>
       </view>
 
@@ -398,8 +398,8 @@
           @click="toggleSection('todayCancelled')"
         >
           <view class="section-left">
-            <text class="section-title">已取消</text>
-            <text class="section-meta">{{ todayCancelledView.length }} 项</text>
+            <text class="section-title">{{ t('home.cancelled') }}</text>
+            <text class="section-meta">{{ todayCancelledView.length }} {{ t('item.count') }}</text>
           </view>
           <text class="section-toggle">{{ collapsedSections.todayCancelled ? '▼' : '▲' }}</text>
         </view>
@@ -417,15 +417,15 @@
             <view v-if="canSwipe(task)" class="swipe-actions">
               <view class="swipe-btn view" @click.stop="openTask(task.id)">
                 <text class="swipe-icon">🔍</text>
-                <text class="swipe-text">查看</text>
+                <text class="swipe-text">{{ t('swipe.view') }}</text>
               </view>
               <view class="swipe-btn done" @click.stop="markDone(task)">
                 <text class="swipe-icon">✓</text>
-                <text class="swipe-text">完成</text>
+                <text class="swipe-text">{{ t('swipe.complete') }}</text>
               </view>
               <view class="swipe-btn cancel" @click.stop="markCancelled(task)">
                 <text class="swipe-icon">✕</text>
-                <text class="swipe-text">取消</text>
+                <text class="swipe-text">{{ t('swipe.cancel') }}</text>
               </view>
             </view>
             <view
@@ -437,7 +437,7 @@
             >
               <view class="task-info">
                 <text class="task-title">{{ task.title }}</text>
-                <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+                <text class="task-meta">{{ t('home.due') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
               </view>
               <view class="task-tags">
                 <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
@@ -446,7 +446,7 @@
               </view>
             </view>
           </view>
-          <view v-if="!todayCancelledView.length" class="empty">暂无任务</view>
+          <view v-if="!todayCancelledView.length" class="empty">{{ t('home.no.tasks') }}</view>
         </view>
       </view>
     </view>
@@ -464,19 +464,20 @@ import { fetchRoles, createRole, updateRole, deleteRole } from '../../services/r
 import { fetchBoardTasks, fetchTasks, updateTaskStatus } from '../../services/tasks';
 import { createTaskFromVoiceBlob } from '../../services/voice';
 import { formatBeijingDate, formatBeijingTime, formatDate } from '../../utils/date';
+import { t, locale, initLocale } from '../../locale';
 import LogoutButton from '../../components/LogoutButton.vue';
 import PromptDialog from '../../components/PromptDialog.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
 
 const selectedDate = ref(formatDate(new Date()));
-const priorityOptions = [
-  { label: '全部', value: null },
-  { label: '高', value: 'high' },
-  { label: '中', value: 'medium' },
-  { label: '低', value: 'low' }
-];
-const categoryOptions = ref([{ label: '全部', value: null }]);
-const roleOptions = ref([{ label: '全部', value: null }]);
+const priorityOptions = computed(() => [
+  { label: t('filter.all'), value: null },
+  { label: t('priority.high'), value: 'high' },
+  { label: t('priority.medium'), value: 'medium' },
+  { label: t('priority.low'), value: 'low' }
+]);
+const categoryOptions = ref([{ label: t('role.all'), value: null }]);
+const roleOptions = ref([{ label: t('role.all'), value: null }]);
 const selectedPriorityIndex = ref(0);
 const selectedCategoryIndex = ref(0);
 const selectedRoleIndex = ref(0);
@@ -554,11 +555,11 @@ const parseDateString = (value) => {
   return new Date(parts[0], parts[1] - 1, parts[2]);
 };
 
-const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const weekDays = computed(() => [t('weekday.sun.full'), t('weekday.mon.full'), t('weekday.tue.full'), t('weekday.wed.full'), t('weekday.thu.full'), t('weekday.fri.full'), t('weekday.sat.full')]);
 
 const selectedDateLabel = computed(() => {
   const date = parseDateString(selectedDate.value);
-  return `${selectedDate.value} ${weekDays[date.getDay()]}`;
+  return `${selectedDate.value} ${weekDays.value[date.getDay()]}`;
 });
 
 const showDatePicker = ref(false);
@@ -583,17 +584,17 @@ const pendingCategoryIndex = ref(0);
 const DATE_WINDOW = 30;
 const DATE_EXTEND = 30;
 
-const selectedPriority = computed(() => priorityOptions[selectedPriorityIndex.value]?.value ?? null);
+const selectedPriority = computed(() => priorityOptions.value[selectedPriorityIndex.value]?.value ?? null);
 const selectedCategoryId = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.value ?? null);
 const isUncategorizedSelected = computed(() => selectedCategoryId.value === 0);
 const selectedRoleId = computed(() => roleOptions.value[selectedRoleIndex.value]?.value ?? null);
-const priorityLabel = computed(() => priorityOptions[selectedPriorityIndex.value]?.label ?? '全部');
-const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? '全部');
-const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
+const priorityLabel = computed(() => priorityOptions.value[selectedPriorityIndex.value]?.label ?? t('filter.all'));
+const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? t('filter.all'));
+const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? t('role.all'));
 
 const openCompleteProfile = () => uni.navigateTo({ url: '/pages/complete-profile/index' });
 const openRoleManager = () => {
-  const actions = ['新增角色', '重命名当前角色', '删除当前角色'];
+  const actions = [t('role.create'), t('role.rename.current'), t('role.delete.current')];
   actionSheetOpen.value = true;
   uni.showActionSheet({
     itemList: actions,
@@ -610,8 +611,8 @@ const openRoleManager = () => {
     },
   });
 };
-const priorityDisplayLabel = computed(() => `优先级-${priorityLabel.value}`);
-const categoryDisplayLabel = computed(() => `分类-${categoryLabel.value}`);
+const priorityDisplayLabel = computed(() => `${t('priority.label')}-${priorityLabel.value}`);
+const categoryDisplayLabel = computed(() => `${t('category')}-${categoryLabel.value}`);
 const roleMap = computed(() => {
   const map = {};
   roles.value.forEach((role) => {
@@ -652,7 +653,7 @@ const decorateTask = (task) => {
   return {
     ...task,
     dueLabel,
-    roleName: roleMap.value[task.role_id] || '未分配',
+    roleName: roleMap.value[task.role_id] || t('task.detail.unassigned'),
     isOverdue
   };
 };
@@ -675,7 +676,7 @@ const buildDateList = (centerDate) => {
     const date = new Date(center);
     date.setDate(date.getDate() + offset);
     const value = formatDate(date);
-    list.push({ value, label: `${value} ${weekDays[date.getDay()]}` });
+    list.push({ value, label: `${value} ${weekDays.value[date.getDay()]}` });
   }
   return list;
 };
@@ -712,7 +713,7 @@ const extendDateList = (direction) => {
       const date = new Date(base);
       date.setDate(date.getDate() - i);
       const value = formatDate(date);
-      extra.push({ value, label: `${value} ${weekDays[date.getDay()]}` });
+      extra.push({ value, label: `${value} ${weekDays.value[date.getDay()]}` });
     }
     dateList.value = [...extra, ...dateList.value];
     datePickerIndex.value += DATE_EXTEND;
@@ -724,7 +725,7 @@ const extendDateList = (direction) => {
       const date = new Date(base);
       date.setDate(date.getDate() + i);
       const value = formatDate(date);
-      extra.push({ value, label: `${value} ${weekDays[date.getDay()]}` });
+      extra.push({ value, label: `${value} ${weekDays.value[date.getDay()]}` });
     }
     dateList.value = [...dateList.value, ...extra];
   }
@@ -827,27 +828,27 @@ const openPrompt = (type, title, placeholder, value = '') => {
 };
 
 const handleCreateRole = () => {
-  openPrompt('role-create', '新增角色', '请输入角色名称');
+  openPrompt('role-create', t('role.create'), t('role.name.ph'));
 };
 
 const handleRenameRole = () => {
   const current = roleOptions.value[selectedRoleIndex.value];
   if (!current || current.value === null) {
-    uni.showToast({ title: '请选择要重命名的角色', icon: 'none' });
+    uni.showToast({ title: t('role.select.rename'), icon: 'none' });
     return;
   }
-  openPrompt('role-rename', '重命名角色', '请输入新名称', current.label);
+  openPrompt('role-rename', t('role.rename.current'), t('role.new.name'), current.label);
 };
 
 const handleDeleteRole = () => {
   const current = roleOptions.value[selectedRoleIndex.value];
   if (!current || current.value === null) {
-    uni.showToast({ title: '请选择要删除的角色', icon: 'none' });
+    uni.showToast({ title: t('role.select.delete'), icon: 'none' });
     return;
   }
   uni.showModal({
-    title: '删除角色',
-    content: `确定删除「${current.label}」吗？`,
+    title: t('role.delete.title'),
+    content: t('role.delete.confirm', { name: current.label }),
     success: async (res) => {
       if (!res.confirm) return;
       try {
@@ -855,7 +856,7 @@ const handleDeleteRole = () => {
         await loadRoles();
         applyDefaultRole();
       } catch {
-        uni.showToast({ title: '删除失败', icon: 'none' });
+        uni.showToast({ title: t('role.delete.fail'), icon: 'none' });
       }
     },
   });
@@ -915,16 +916,16 @@ const goToday = () => {
 };
 
 const priorityText = (value) => {
-  if (value === 'high') return '高';
-  if (value === 'medium') return '中';
-  return '低';
+  if (value === 'high') return t('priority.high');
+  if (value === 'medium') return t('priority.medium');
+  return t('priority.low');
 };
 
 const statusText = (value) => {
-  if (value === 'todo') return '待办';
-  if (value === 'in_progress') return '进行中';
-  if (value === 'cancelled') return '已取消';
-  return '已完成';
+  if (value === 'todo') return t('status.todo');
+  if (value === 'in_progress') return t('status.in_progress');
+  if (value === 'cancelled') return t('status.cancelled');
+  return t('status.done');
 };
 
 const openTask = (taskId) => {
@@ -1281,8 +1282,8 @@ const loadCategories = async () => {
   try {
     const data = await fetchCategories();
     const options = [
-      { label: '全部', value: null },
-      { label: '未分类', value: 0 },
+      { label: t('filter.all'), value: null },
+      { label: t('category.uncategorized'), value: 0 },
     ];
     data.forEach((item) => {
       options.push({ label: item.name, value: item.id });
@@ -1298,7 +1299,7 @@ const loadRoles = async () => {
     const data = await fetchRoles();
     roles.value = data;
     roleOptions.value = [
-      { label: '全部', value: null },
+      { label: t('role.all'), value: null },
       ...data.map((role) => ({ label: role.name, value: role.id })),
     ];
   } catch {
@@ -1486,6 +1487,7 @@ const loadProfile = async () => {
 
 onShow(async () => {
   if (!ensureAuth()) return;
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.home') });
   await loadProfile();
   const em = userProfile.value && userProfile.value.email;
   if (em && em.endsWith('@wechat.local')) {
@@ -1493,10 +1495,11 @@ onShow(async () => {
     return;
   }
   const stored = uni.getStorageSync('planner_selected_date');
-  if (stored) {
+  if (stored && /^\d{4}-\d{2}-\d{2}$/.test(stored)) {
     selectedDate.value = stored;
   } else {
     selectedDate.value = formatDate(new Date());
+    uni.setStorageSync('planner_selected_date', selectedDate.value);
   }
   await loadRoles();
   syncRoleSelection();
@@ -1654,6 +1657,11 @@ onShow(async () => {
 }
 .date-actions .btn.primary {
   width: 46px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background: #b76e8a;
   border-color: #b76e8a;
   color: #fff;

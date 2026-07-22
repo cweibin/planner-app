@@ -1,35 +1,45 @@
 <template>
   <view class="page">
     <view class="card">
-      <text class="title">{{ mode === 'login' ? '登录' : '注册' }}</text>
+            <view class="lang-row">
+        <text class="lang-label">{{ t('lang.label') }}：</text>
+        <view
+          v-for="l in availableLocales"
+          :key="l.value"
+          class="lang-item"
+          :class="{ active: locale === l.value }"
+          @click="setLocale(l.value)"
+        >{{ l.label }}</view>
+      </view>
+      <text class="title">{{ mode === 'login' ? t('login') : t('register') }}</text>
 
       <view v-if="mode === 'login'">
         <view class="form-field">
-          <text class="label">邮箱或手机号</text>
-          <input class="input" v-model="loginUsername" placeholder="输入邮箱或手机号" />
+          <text class="label">{{ t('login.email.or.phone') }}</text>
+          <input class="input" v-model="loginUsername" :placeholder="t('login.email.or.phone')" />
         </view>
         <view class="form-field">
-          <text class="label">密码</text>
-          <input class="input" v-model="loginPassword" password placeholder="输入密码" />
+          <text class="label">{{ t('password') }}</text>
+          <input class="input" v-model="loginPassword" password :placeholder="t('password')" />
         </view>
       </view>
 
       <view v-else>
         <view class="form-field">
-          <text class="label">邮箱 *</text>
-          <input class="input" v-model="registerEmail" placeholder="输入邮箱" />
+          <text class="label">{{ t('email.required') }}</text>
+          <input class="input" v-model="registerEmail" :placeholder="t('email')" />
         </view>
         <view class="form-field">
-          <text class="label">手机号 *</text>
-          <input class="input" v-model="registerPhone" placeholder="请输入手机号" />
+          <text class="label">{{ t('phone.required') }}</text>
+          <input class="input" v-model="registerPhone" :placeholder="t('phone')" />
         </view>
         <view class="form-field">
-          <text class="label">密码 *</text>
-          <input class="input" v-model="registerPassword" password placeholder="输入密码" />
+          <text class="label">{{ t('password.required') }}</text>
+          <input class="input" v-model="registerPassword" password :placeholder="t('password')" />
         </view>
         <view class="form-field">
-          <text class="label">确认密码 *</text>
-          <input class="input" v-model="registerConfirm" password placeholder="再次输入密码" />
+          <text class="label">{{ t('confirm.password') }}</text>
+          <input class="input" v-model="registerConfirm" password :placeholder="t('password')" />
         </view>
       </view>
 
@@ -38,22 +48,22 @@
           <text v-if="agreed" class="checkbox-tick">✓</text>
         </view>
         <view class="agree-text">
-          <text>我已阅读并同意</text>
-          <text class="link" @click="openAgreement">《用户服务协议》</text>
-          <text>和</text>
-          <text class="link" @click="openPrivacy">《隐私政策》</text>
+          <text>{{ t('agree.prefix') }}</text>
+          <text class="link" @click="openAgreement">{{ t('agreement.title') }}</text>
+          <text>{{ t('agree.and') }}</text>
+          <text class="link" @click="openPrivacy">{{ t('privacy.title') }}</text>
         </view>
       </view>
       <text v-if="error" class="error">{{ error }}</text>
       <button class="btn primary" :disabled="submitting" @click="handleSubmit">
-        {{ submitting ? (mode === 'login' ? '登录中...' : '注册中...') : (mode === 'login' ? '登录' : '注册') }}
+        {{ submitting ? (mode === 'login' ? t('login.loading') : t('register.loading')) : (mode === 'login' ? t('login') : t('register')) }}
       </button>
       <view class="switch-row">
-        <text class="switch-text">{{ mode === 'login' ? '没有账号？' : '已有账号？' }}</text>
-        <text class="switch-link" @click="toggleMode">{{ mode === 'login' ? '注册' : '登录' }}</text>
+        <text class="switch-text">{{ mode === 'login' ? t('no.account') : t('have.account') }}</text>
+        <text class="switch-link" @click="toggleMode">{{ mode === 'login' ? t('register') : t('login') }}</text>
       </view>
       <view class="wx-divider"><text class="wx-divider-text">或</text></view>
-      <button class="btn wx-btn" :disabled="submitting" @click="handleWechatLogin">微信登录</button>
+      <button class="btn wx-btn" :disabled="submitting" @click="handleWechatLogin">{{ t('wechat.login') }}</button>
     </view>
 
   </view>
@@ -67,6 +77,7 @@ import { setRoleId } from '../../utils/auth';
 import { fetchProfile } from '../../services/auth';
 import { getToken } from '../../services/api';
 import { isBeijingTimezone } from '../../utils/date';
+import { t, locale, setLocale, initLocale, availableLocales } from '../../locale';
 
 const mode = ref('login');
 const loginUsername = ref('');
@@ -93,7 +104,7 @@ const afterLogin = async () => {
 
 const handleLogin = async () => {
   if (!loginUsername.value || !loginPassword.value) {
-    error.value = '请输入账号和密码';
+    error.value = t('login.fail');
     return;
   }
   submitting.value = true;
@@ -102,7 +113,7 @@ const handleLogin = async () => {
     await login(loginUsername.value, loginPassword.value);
     await afterLogin();
   } catch {
-    error.value = '登录失败，请检查账号或密码';
+    error.value = t('login.fail');
   } finally {
     submitting.value = false;
   }
@@ -110,11 +121,11 @@ const handleLogin = async () => {
 
 const handleRegister = async () => {
   if (!registerEmail.value || !registerPhone.value || !registerPassword.value || !registerConfirm.value) {
-    error.value = '请输入邮箱、手机号和密码';
+    error.value = t('fill.email.phone.password');
     return;
   }
   if (registerPassword.value !== registerConfirm.value) {
-    error.value = '两次密码不一致';
+    error.value = t('password.mismatch');
     return;
   }
   submitting.value = true;
@@ -131,7 +142,7 @@ const handleRegister = async () => {
     await login(registerEmail.value, registerPassword.value);
     await afterLogin();
   } catch (err) {
-    error.value = '注册失败，请检查信息是否正确';
+    error.value = t('register.fail');
   } finally {
     submitting.value = false;
   }
@@ -139,7 +150,7 @@ const handleRegister = async () => {
 
 const handleSubmit = async () => {
   if (!agreed.value) {
-    error.value = '请先阅读并同意《用户服务协议》和《隐私政策》';
+    error.value = t('agree.required');
     return;
   }
   if (mode.value === 'login') {
@@ -166,7 +177,7 @@ const handleWechatLogin = async () => {
     });
     const code = loginRes && loginRes.code;
     if (!code) {
-      error.value = '获取微信登录凭证失败';
+      error.value = t('get.code.fail');
       return;
     }
     await wechatLogin(code);
@@ -180,7 +191,7 @@ const handleWechatLogin = async () => {
     } catch (e) {}
     await afterLogin();
   } catch (err) {
-    error.value = (err && err.msg) || '微信登录失败';
+    error.value = (err && err.msg) || t('wechat.login.fail');
   } finally {
     submitting.value = false;
   }
@@ -192,6 +203,7 @@ const toggleMode = () => {
 };
 
 onShow(() => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.login') });
   if (getToken()) {
     uni.reLaunch({ url: '/pages/home/index' });
   }
@@ -304,4 +316,8 @@ onShow(() => {
   border-color: #07c160;
   color: #fff;
 }
+.lang-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lang-label { font-size: 12px; color: #776b7f; }
+.lang-item { font-size: 12px; padding: 4px 10px; border: 1px solid rgba(110,95,116,0.4); border-radius: 12px; color: #2b2430; }
+.lang-item.active { background: #b76e8a; border-color: #b76e8a; color: #fff; }
 </style>
