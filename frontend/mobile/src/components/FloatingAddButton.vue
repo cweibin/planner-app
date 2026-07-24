@@ -7,6 +7,7 @@
 <script setup>
 import { computed } from 'vue';
 import { t } from '../locale';
+import { requireAuth } from '../utils/auth';
 const props = defineProps({
   disable: { type: Boolean, default: false },
 });
@@ -20,6 +21,7 @@ const isHidden = computed(() => props.disable || getCurrentRoute() === 'pages/st
 
 const openAdd = () => {
   if (isHidden.value) return;
+  if (!requireAuth()) return;
   const current = getCurrentRoute();
   if (current === 'pages/habits/index') {
     uni.navigateTo({ url: '/pages/habit-create/index' });

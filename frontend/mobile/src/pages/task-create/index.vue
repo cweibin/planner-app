@@ -98,7 +98,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { ensureAuth, getRoleId, setRoleId } from '../../utils/auth';
+import { requireAuth, getRoleId, setRoleId } from '../../utils/auth';
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../../services/categories';
 import PromptDialog from '../../components/PromptDialog.vue';
 import { fetchRoles } from '../../services/roles';
@@ -426,7 +426,7 @@ onLoad(() => {
 
 onShow(async () => {
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.task.create') });
-  if (!ensureAuth()) return;
+  if (!requireAuth()) return;
   buildDefaultDates();
   await loadRoles();
   await loadCategories();

@@ -99,7 +99,7 @@ import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { createTaskFromVoiceBlob, createTaskFromVoiceFile } from '../../services/voice';
 import { fetchRoles } from '../../services/roles';
-import { ensureAuth } from '../../utils/auth';
+import { requireAuth } from '../../utils/auth';
 import { t, initLocale } from '../../locale';
 import { updateTaskStatus } from '../../services/tasks';
 import { formatBeijingDate, formatBeijingTime, formatDate, getBeijingNowParts } from '../../utils/date';
@@ -589,7 +589,7 @@ const encodeWav = (buffer, inputRate, targetRate) => {
   return new Blob([wavBuffer], { type: 'audio/wav' });
 };
 onShow(() => {
-  if (!ensureAuth()) return;
+  if (!requireAuth()) return;
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.voice.create') });
   void loadRoles();
 });

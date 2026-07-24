@@ -92,8 +92,8 @@ const loadStats = async () => {
 };
 
 onShow(() => {
-  if (!ensureAuth()) return;
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.stats') });
+  if (!ensureAuth()) return;
   void loadStats();
 });
 </script>

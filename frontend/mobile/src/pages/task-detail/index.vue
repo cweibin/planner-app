@@ -144,7 +144,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { ensureAuth } from '../../utils/auth';
+import { requireAuth } from '../../utils/auth';
 import { fetchTask, updateTask, updateTaskStatus } from '../../services/tasks';
 import { fetchRoles } from '../../services/roles';
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../../services/categories';
@@ -549,7 +549,7 @@ onLoad((query) => {
 
 onShow(async () => {
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.task.detail') });
-  if (!ensureAuth()) return;
+  if (!requireAuth()) return;
   await loadMeta();
   await loadTask();
 });

@@ -1,17 +1,17 @@
 {
   "pages": [
     {
-      "path": "pages/login/index",
+      "path": "pages/home/index",
       "style": {
-        "navigationBarTitleText": "登录",
+        "navigationBarTitleText": "今日概况",
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }
     },
     {
-      "path": "pages/home/index",
+      "path": "pages/login/index",
       "style": {
-        "navigationBarTitleText": "今日概况",
+        "navigationBarTitleText": "登录",
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }

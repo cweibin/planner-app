@@ -66,7 +66,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { ensureAuth } from '../../utils/auth';
+import { requireAuth } from '../../utils/auth';
 import { createHabit, fetchHabit, updateHabit } from '../../services/habits';
 import { formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
@@ -211,7 +211,7 @@ onLoad((query) => {
 
 onShow(async () => {
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.habit.create') });
-  if (!ensureAuth()) return;
+  if (!requireAuth()) return;
   if (isEditing.value) {
     await loadHabit();
   } else {

@@ -2,6 +2,10 @@
   <view class="page">
     <LogoutButton />
     <FloatingAddButton :disable="showDatePicker || showRolePicker || showPriorityPicker || showCategoryPicker || actionSheetOpen" />
+    <view v-if="!isLoggedIn" class="guest-banner" @click="goLogin">
+      <text class="guest-text">{{ t('guest.welcome') }}</text>
+      <text class="guest-btn">{{ t('guest.login.btn') }}</text>
+    </view>
     <view class="welcome card">
       <view class="welcome-left">
         <view class="welcome-row">
@@ -457,7 +461,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { ensureAuth, getRoleId, hasRoleSelection, setRoleId } from '../../utils/auth';
+import { ensureAuth, requireAuth, getRoleId, hasRoleSelection, setRoleId } from '../../utils/auth';
 import { fetchProfile } from '../../services/auth';
 import { fetchCategories } from '../../services/categories';
 import { fetchRoles, createRole, updateRole, deleteRole } from '../../services/roles';
@@ -492,6 +496,8 @@ const yesterdayRemaining = ref([]);
 const roles = ref([]);
 const loading = ref(false);
 const userProfile = ref(null);
+const isLoggedIn = ref(false);
+const goLogin = () => uni.navigateTo({ url: '/pages/login/index' });
 const collapsedSections = ref({
   yesterday: true,
   todayTodo: true,
@@ -1486,8 +1492,9 @@ const loadProfile = async () => {
 };
 
 onShow(async () => {
-  if (!ensureAuth()) return;
+  isLoggedIn.value = ensureAuth();
   initLocale(); uni.setNavigationBarTitle({ title: t('nav.home') });
+  if (!isLoggedIn.value) return;
   await loadProfile();
   const em = userProfile.value && userProfile.value.email;
   if (em && em.endsWith('@wechat.local')) {
@@ -2061,4 +2068,21 @@ onShow(async () => {
   font-size: 13px;
   color: #b76e8a;
 }
+.guest-banner {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom) + 70px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #b76e8a;
+  color: #fff;
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(183, 110, 138, 0.3);
+}
+.guest-text { font-size: 12px; }
+.guest-btn { font-size: 12px; font-weight: 700; }
 </style>
