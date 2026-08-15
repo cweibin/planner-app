@@ -16,18 +16,8 @@
         <view class="bar" v-for="item in taskStats" :key="item.date">
           <text class="bar-label">{{ item.label }}</text>
           <view class="stack">
-            <view
-              v-if="item.done > 0"
-              class="seg done"
-              :style="{ width: barWidth(item.done, item.done + item.pending) }"
-            />
-            <view
-              v-if="item.pending > 0"
-              class="seg pending"
-              :class="{ 'only-child': item.done === 0 }"
-              :style="{ width: barWidth(item.pending, item.done + item.pending) }"
-            />
-            <view v-if="item.done === 0 && item.pending === 0" class="seg empty-seg" />
+            <view class="seg done" :style="{ width: barWidth(item.done, item.done + item.pending) }" />
+            <view class="seg pending" :style="{ width: barWidth(item.pending, item.done + item.pending) }" />
           </view>
           <text class="bar-value">{{ item.done }}/{{ item.done + item.pending }}</text>
         </view>
@@ -81,7 +71,7 @@ const toLabel = (dateStr) => {
 };
 
 const barWidth = (value, total) => {
-  if (!total || !value) return '0%';
+  if (!total) return '0%';
   const pct = Math.min(100, (value / total) * 100);
   return pct + '%';
 };
@@ -191,36 +181,28 @@ onShow(() => {
 }
 
 .stack {
-  display: flex;
-  align-items: center;
+  position: relative;
   flex: 1;
-  min-width: 0;
-  height: 14px;
+  height: 20px;
   background: #f3f0f4;
   border-radius: 6px;
   overflow: hidden;
 }
 
 .seg {
-  height: 100%;
-  transition: width 0.3s ease;
+  position: absolute;
+  top: 0;
+  bottom: 0;
 }
 
 .seg.done {
+  left: 0;
   background: #3b82f6;
 }
 
 .seg.pending {
+  right: 0;
   background: #c9bcd0;
-}
-
-.seg.pending.only-child {
-  border-radius: 6px;
-}
-
-.seg.empty-seg {
-  width: 100%;
-  background: transparent;
 }
 
 .bar-value {
