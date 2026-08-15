@@ -79,28 +79,29 @@ def time_statistics(
     today = date.today()
     start_date = today - timedelta(days=days - 1)
 
-    # 已完成任务（按截止日统计）
+    # 已完成任务：按完成日期(completed_at)统计，而非截止日期
+    # +8h 将 UTC 转为北京时间后再取日期，避免跨日偏移
     done_rows = (
-        db.query(func.date(Task.due_date), func.count(Task.id))
+        db.query(func.date(Task.completed_at + timedelta(hours=8)), func.count(Task.id))
         .filter(
             Task.owner_id == current_user.id,
-            Task.due_date.isnot(None),
+            Task.completed_at.isnot(None),
             Task.status == TaskStatus.done,
-            func.date(Task.due_date) >= start_date,
+            func.date(Task.completed_at + timedelta(hours=8)) >= start_date,
         )
-        .group_by(func.date(Task.due_date))
+        .group_by(func.date(Task.completed_at + timedelta(hours=8)))
         .all()
     )
-    # 未完成任务（待办+进行中，排除已取消）
+    # 未完成任务：按截止日期统计（+8h 转北京时间）
     pending_rows = (
-        db.query(func.date(Task.due_date), func.count(Task.id))
+        db.query(func.date(Task.due_date + timedelta(hours=8)), func.count(Task.id))
         .filter(
             Task.owner_id == current_user.id,
             Task.due_date.isnot(None),
             Task.status.in_([TaskStatus.todo, TaskStatus.in_progress]),
-            func.date(Task.due_date) >= start_date,
+            func.date(Task.due_date + timedelta(hours=8)) >= start_date,
         )
-        .group_by(func.date(Task.due_date))
+        .group_by(func.date(Task.due_date + timedelta(hours=8)))
         .all()
     )
 
