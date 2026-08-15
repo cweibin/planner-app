@@ -5,24 +5,24 @@
     <view class="stats-grid">
       <view class="stats-card">
         <text class="stats-value">{{ totalHabits }}</text>
-        <text class="stats-label">习惯总数</text>
+        <text class="stats-label">{{ t('habit.total') }}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{ activeHabitsCount }}</text>
-        <text class="stats-label">进行中</text>
+        <text class="stats-label">{{ t('habit.active') }}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{ todayCompleteText }}</text>
-        <text class="stats-label">今天完成</text>
+        <text class="stats-label">{{ t('habit.today.done') }}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{ weekRate }}%</text>
-        <text class="stats-label">本周完成率</text>
+        <text class="stats-label">{{ t('habit.week.rate') }}</text>
       </view>
     </view>
     <view class="card">
       <view class="section-header-row">
-        <view class="section-title">近一周习惯追踪</view>
+        <view class="section-title">{{ t('habit.week.track') }}</view>
         <picker
           :range="statusFilterOptions"
           range-key="label"
@@ -33,9 +33,9 @@
         </picker>
       </view>
       <view class="week-nav">
-        <button class="btn" size="mini" @click="shiftWeek(-1)">上周</button>
+        <button class="btn" size="mini" @click="shiftWeek(-1)">{{ t('habit.last.week') }}</button>
         <text class="week-label">{{ weekLabel }}</text>
-        <button class="btn" size="mini" @click="shiftWeek(1)">下周</button>
+        <button class="btn" size="mini" @click="shiftWeek(1)">{{ t('habit.next.week') }}</button>
       </view>
       <view v-for="habit in filteredHabits" :key="habit.id" class="habit-block">
         <view
@@ -62,13 +62,13 @@
             <view class="action-block edit" @click.stop="editHabit(habit)">
               <view class="block-inner">
                 <text class="block-icon">✎</text>
-                <text class="block-text">编辑</text>
+                <text class="block-text">{{ t('habit.edit') }}</text>
               </view>
             </view>
             <view class="action-block delete" @click.stop="deleteHabitConfirm(habit)">
               <view class="block-inner">
                 <text class="block-icon">✕</text>
-                <text class="block-text">删除</text>
+                <text class="block-text">{{ t('habit.delete') }}</text>
               </view>
             </view>
           </view>
@@ -81,13 +81,13 @@
             <view class="habit-info">
               <text class="habit-title">{{ habit.name }}</text>
               <text class="habit-meta">
-                本周完成率 {{ getWeekCheckIns(habit) }}/{{ getWeekTarget(habit) }} 次 ({{ getWeekRate(habit) }}%)
+                {{ t('habit.week.rate.text', { done: getWeekCheckIns(habit), target: getWeekTarget(habit), rate: getWeekRate(habit) }) }}
               </text>
-              <text class="habit-meta">目标：{{ getTargetLabel(habit) }}</text>
-              <text class="habit-meta">计划日期：{{ getPlanLabel(habit) }}</text>
+              <text class="habit-meta">{{ t('habit.target.label', { label: getTargetLabel(habit) }) }}</text>
+              <text class="habit-meta">{{ t('habit.plan.label', { label: getPlanLabel(habit) }) }}</text>
             </view>
             <view class="habit-actions">
-              <button class="btn habit-checkin" size="mini" @click.stop="handleCheckIn(habit, todayStr)">打卡</button>
+              <button class="btn habit-checkin" size="mini" @click.stop="handleCheckIn(habit, todayStr)">{{ t('habit.checkin') }}</button>
             </view>
           </view>
         </view>
@@ -109,7 +109,7 @@
           </view>
         </view>
       </view>
-      <view v-if="!filteredHabits.length" class="empty">暂无习惯</view>
+      <view v-if="!filteredHabits.length" class="empty">{{ t('habit.no.habits') }}</view>
     </view>
   </view>
 </template>
@@ -122,6 +122,7 @@ import { fetchHabits, fetchCheckIns, checkInHabit, cancelCheckIn, updateHabit, d
 import { formatBeijingTime, formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
+import { t, locale, initLocale } from '../../locale';
 
 const startOfWeek = (date) => {
   const d = new Date(date);
@@ -143,19 +144,19 @@ const swipeTranslateX = ref(0);
 const SWIPE_ACTION_WIDTH = 225;
 const isDragging = ref(false);
 
-const statusOptions = [
-  { label: '进行中', value: 'active' },
-  { label: '暂停', value: 'paused' },
-  { label: '已完成', value: 'completed' },
-];
+const statusOptions = computed(() => [
+  { label: t('habit.active'), value: 'active' },
+  { label: t('habit.paused'), value: 'paused' },
+  { label: t('habit.completed'), value: 'completed' },
+]);
 
-const statusFilterOptions = [
-  { label: '全部', value: 'all' },
-  ...statusOptions,
-];
+const statusFilterOptions = computed(() => [
+  { label: t('role.all'), value: 'all' },
+  ...statusOptions.value,
+]);
 const statusFilterIndex = ref(1);
-const statusFilterLabel = computed(() => statusFilterOptions[statusFilterIndex.value]?.label || '进行中');
-const statusFilterValue = computed(() => statusFilterOptions[statusFilterIndex.value]?.value || 'active');
+const statusFilterLabel = computed(() => statusFilterOptions.value[statusFilterIndex.value]?.label || t('habit.active'));
+const statusFilterValue = computed(() => statusFilterOptions.value[statusFilterIndex.value]?.value || 'active');
 
 const filteredHabits = computed(() => {
   if (statusFilterValue.value === 'all') return habits.value;
@@ -163,12 +164,12 @@ const filteredHabits = computed(() => {
 });
 
 const statusLabel = (status) => {
-  const found = statusOptions.find((item) => item.value === status);
-  return found?.label || '进行中';
+  const found = statusOptions.value.find((item) => item.value === status);
+  return found?.label || t('habit.active');
 };
 
 const statusIndex = (habit) => {
-  const idx = statusOptions.findIndex((item) => item.value === habit?.status);
+  const idx = statusOptions.value.findIndex((item) => item.value === habit?.status);
   return idx >= 0 ? idx : 0;
 };
 
@@ -270,7 +271,7 @@ const getCheckInTime = (habit, date) => {
 
 const getTargetLabel = (habit) => {
   const target = getTargetValue(habit);
-  return habit.target_type === 'daily' ? `每天 ${target} 次` : `每周 ${target} 次`;
+  return habit.target_type === 'daily' ? t('habit.target.daily', { n: target }) : t('habit.target.weekly', { n: target });
 };
 
 const getPlanLabel = (habit) => {
@@ -390,14 +391,14 @@ const onSwipeEnd = (habit) => {
 const onStatusChange = async (event, habit) => {
   if (!habit?.id) return;
   const idx = Number(event.detail.value);
-  const next = statusOptions[idx]?.value || 'active';
+  const next = statusOptions.value[idx]?.value || 'active';
   if (next === habit.status) return;
   try {
     await updateHabit(habit.id, { status: next });
     await loadHabits();
     await loadCheckIns();
   } catch {
-    uni.showToast({ title: '状态更新失败', icon: 'none' });
+    uni.showToast({ title: t('habit.status.fail'), icon: 'none' });
   }
 };
 
@@ -426,8 +427,8 @@ const openHabitDetail = (habit) => {
 const deleteHabitConfirm = (habit) => {
   if (!habit?.id) return;
   uni.showModal({
-    title: '删除习惯',
-    content: `确定删除「${habit.name}」吗？`,
+    title: t('habit.delete.title'),
+    content: t('habit.delete.confirm', { name: habit.name }),
     success: async (res) => {
       if (!res.confirm) return;
       try {
@@ -436,7 +437,7 @@ const deleteHabitConfirm = (habit) => {
         await loadHabits();
         await loadCheckIns();
       } catch (err) {
-        const message = habit.status !== 'active' ? '仅可删除进行中的习惯' : '删除失败';
+        const message = habit.status !== 'active' ? t('habit.delete.only.active') : t('habit.delete.fail');
         uni.showToast({ title: message, icon: 'none' });
       }
     },
@@ -470,6 +471,7 @@ watch(currentWeekStart, () => {
 });
 
 onShow(async () => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.habits') });
   if (!ensureAuth()) return;
   currentWeekStart.value = startOfWeek(new Date());
   await loadHabits();
@@ -494,11 +496,11 @@ onShow(async () => {
 }
 
 .stats-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 10px;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -508,12 +510,12 @@ onShow(async () => {
 .stats-value {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text);
+  color: #2b2430;
 }
 
 .stats-label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .section-header-row {
@@ -524,12 +526,12 @@ onShow(async () => {
 }
 
 .filter-chip {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: #776b7f;
   background: #fff;
 }
 
@@ -538,7 +540,7 @@ onShow(async () => {
 }
 
 .habit-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 8px;
   display: flex;
@@ -644,7 +646,7 @@ onShow(async () => {
 .habit-meta {
   display: block;
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 2px;
 }
 
@@ -656,7 +658,7 @@ onShow(async () => {
 }
 
 .week-cell {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 8px;
   text-align: center;
   padding: 4px 0;
@@ -700,7 +702,7 @@ onShow(async () => {
 .rate {
   font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
+  color: #b76e8a;
   text-align: center;
 }
 
@@ -713,12 +715,12 @@ onShow(async () => {
 
 .week-label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .empty {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   text-align: center;
   padding: 16px 0;
 }

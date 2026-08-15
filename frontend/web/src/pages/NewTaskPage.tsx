@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import dayjs from 'dayjs';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createTask, TaskPriority } from '../services/tasks';
 import {
@@ -10,6 +9,7 @@ import {
   updateCategory,
 } from '../services/categories';
 import { Role } from '../services/roles';
+import { buildBeijingDateTime, formatBeijingDate, nowBeijing, toBeijing } from '../utils/time';
 
 const PRIORITY_LABEL: Record<TaskPriority, string> = {
   high: '高优先级',
@@ -38,10 +38,13 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
   const [searchParams] = useSearchParams();
   const defaultDate = useMemo(() => {
     const dateParam = searchParams.get('date');
-    if (dateParam && dayjs(dateParam).isValid()) {
-      return dayjs(dateParam).format('YYYY-MM-DD');
+    if (dateParam) {
+      const parsed = toBeijing(dateParam);
+      if (parsed && parsed.isValid()) {
+        return formatBeijingDate(dateParam);
+      }
     }
-    return dayjs().format('YYYY-MM-DD');
+    return nowBeijing().format('YYYY-MM-DD');
   }, [searchParams]);
 
   const [title, setTitle] = useState('');
@@ -88,14 +91,20 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
 
   const handleStartDateChange = (value: string) => {
     setStartDate(value);
-    if (dueDate && dayjs(value).isAfter(dayjs(dueDate))) {
-      setDueDate(value);
+    if (dueDate) {
+      const start = toBeijing(value);
+      const due = toBeijing(dueDate);
+      if (start && due && start.isAfter(due)) {
+        setDueDate(value);
+      }
     }
   };
 
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
-    if (dayjs(`${dueDate}T${dueTime}`).isBefore(dayjs(`${startDate}T${value}`))) {
+    const due = toBeijing(`${dueDate}T${dueTime}`);
+    const start = toBeijing(`${startDate}T${value}`);
+    if (due && start && due.isBefore(start)) {
       setDueDate(startDate);
       setDueTime(value);
     }
@@ -103,7 +112,9 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
 
   const handleDueDateChange = (value: string) => {
     setDueDate(value);
-    if (dayjs(`${value}T${dueTime}`).isBefore(dayjs(`${startDate}T${startTime}`))) {
+    const due = toBeijing(`${value}T${dueTime}`);
+    const start = toBeijing(`${startDate}T${startTime}`);
+    if (due && start && due.isBefore(start)) {
       setStartDate(value);
       setStartTime(dueTime);
     }
@@ -111,7 +122,9 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
 
   const handleDueTimeChange = (value: string) => {
     setDueTime(value);
-    if (dayjs(`${dueDate}T${value}`).isBefore(dayjs(`${startDate}T${startTime}`))) {
+    const due = toBeijing(`${dueDate}T${value}`);
+    const start = toBeijing(`${startDate}T${startTime}`);
+    if (due && start && due.isBefore(start)) {
       setStartDate(dueDate);
       setStartTime(value);
     }
@@ -183,9 +196,15 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
       setError('请输入任务标题');
       return;
     }
-    const startDateTime = dayjs(`${startDate}T${startTime}`);
-    const dueDateTime = dayjs(`${dueDate}T${dueTime}`);
-    if (startDate && dueDate && startDateTime.isAfter(dueDateTime)) {
+    const startDateTime = toBeijing(`${startDate}T${startTime}`);
+    const dueDateTime = toBeijing(`${dueDate}T${dueTime}`);
+    if (
+      startDate &&
+      dueDate &&
+      startDateTime &&
+      dueDateTime &&
+      startDateTime.isAfter(dueDateTime)
+    ) {
       setError('开始时间不能晚于结束时间');
       return;
     }
@@ -197,8 +216,8 @@ export const NewTaskPage: React.FC<NewTaskPageProps> = ({
         description: description.trim() ? description.trim() : undefined,
         priority,
         category_id: categoryId === 'none' ? undefined : categoryId,
-        start_date: startDate ? `${startDate}T${startTime}:00` : undefined,
-        due_date: dueDate ? `${dueDate}T${dueTime}:00` : undefined,
+        start_date: startDate ? buildBeijingDateTime(startDate, startTime) : undefined,
+        due_date: dueDate ? buildBeijingDateTime(dueDate, dueTime) : undefined,
         is_recurring: isRecurring,
         recurring_rule: isRecurring ? 'daily' : undefined,
         role_id: selectedRoleId ?? undefined,

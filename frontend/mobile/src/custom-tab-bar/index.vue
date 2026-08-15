@@ -1,17 +1,17 @@
 <template>
   <view class="tab-bar">
     <view class="tab-item" :class="{ active: selected === 0 }" @click="switchTab(list[0].pagePath)">
-      <text>首页</text>
+      <text>{{ t('tab.home') }}</text>
     </view>
     <view class="tab-item" :class="{ active: selected === 1 }" @click="switchTab(list[1].pagePath)">
-      <text>日历</text>
+      <text>{{ t('tab.calendar') }}</text>
     </view>
 
     <view class="tab-item" :class="{ active: selected === 2 }" @click="switchTab(list[2].pagePath)">
-      <text>习惯</text>
+      <text>{{ t('tab.habits') }}</text>
     </view>
     <view class="tab-item" :class="{ active: selected === 3 }" @click="switchTab(list[3].pagePath)">
-      <text>统计</text>
+      <text>{{ t('tab.stats') }}</text>
     </view>
   </view>
 
@@ -19,6 +19,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import { t, initLocale } from '../locale';
 
 const list = [
   { pagePath: 'pages/home/index', text: '首页' },
@@ -42,6 +43,7 @@ const switchTab = (path) => {
 };
 
 onMounted(() => {
+  initLocale();
   updateSelected();
 });
 </script>
@@ -55,7 +57,7 @@ onMounted(() => {
   height: 58px;
   padding-bottom: env(safe-area-inset-bottom);
   background: #fffdfd;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(110, 95, 116, 0.4);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -67,11 +69,11 @@ onMounted(() => {
   text-align: center;
   font-size: 15px;
   font-weight: 700;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .tab-item.active {
-  color: var(--accent);
+  color: #b76e8a;
   font-weight: 700;
 }
 

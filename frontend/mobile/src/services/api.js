@@ -1,5 +1,6 @@
-const H5_BASE_URL = '/api';
-const DEFAULT_BASE_URL = import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000/api';
+const ENV_BASE_URL = import.meta.env.VITE_API_BASE;
+const H5_BASE_URL = import.meta.env.DEV ? '/api' : (ENV_BASE_URL || '/api');
+const DEFAULT_BASE_URL = ENV_BASE_URL || 'https://your-api-domain.com/api';
 
 function isH5() {
   // #ifdef H5

@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import {
+  formatBeijing,
+  formatBeijingFromUtc,
+  formatBeijingDate,
+  formatBeijingTime,
+  nowBeijing,
+  toBeijing,
+} from '../utils/time';
+import {
   Task,
   TaskPriority,
   UpdateTaskPayload,
@@ -82,7 +90,7 @@ export const TaskDetailModal: React.FC<Props> = ({
   const requestDueExtensionTime = useCallback(
     () =>
       new Promise<string | null>((resolve) => {
-        setDueExtensionTime(dayjs().format('YYYY-MM-DDTHH:mm'));
+        setDueExtensionTime(nowBeijing().format('YYYY-MM-DDTHH:mm'));
         setDueExtensionPrompt({ resolve });
       }),
     [],
@@ -90,9 +98,9 @@ export const TaskDetailModal: React.FC<Props> = ({
 
   const handleConfirmDueExtension = () => {
     if (!dueExtensionPrompt) return;
-    const selected = dueExtensionTime || dayjs().format('YYYY-MM-DDTHH:mm');
-    const selectedTime = dayjs(selected);
-    if (!selectedTime.isValid()) {
+    const selected = dueExtensionTime || nowBeijing().format('YYYY-MM-DDTHH:mm');
+    const selectedTime = toBeijing(selected);
+    if (!selectedTime || !selectedTime.isValid()) {
       window.alert('请选择有效的截止时间');
       return;
     }
@@ -109,9 +117,9 @@ export const TaskDetailModal: React.FC<Props> = ({
 
   const getExtendedDueDate = async (action: 'todo' | 'in_progress' | 'cancel') => {
     if (!currentTask.due_date) return null;
-    const due = dayjs(currentTask.due_date);
-    const now = dayjs();
-    if (!due.isValid()) return null;
+    const due = toBeijing(currentTask.due_date);
+    const now = nowBeijing();
+    if (!due || !due.isValid()) return null;
     if (!due.isBefore(now)) return null;
     if ((action === 'todo' || action === 'in_progress') && isYesterdayRemaining) {
       return await requestDueExtensionTime();
@@ -298,7 +306,8 @@ export const TaskDetailModal: React.FC<Props> = ({
     }
   };
 
-  const formatDateTime = (value: dayjs.Dayjs) => value.format('YYYY-MM-DDTHH:mm:00');
+  const formatDateTime = (value: dayjs.Dayjs) =>
+    formatBeijing(value, 'YYYY-MM-DDTHH:mm:00');
 
   const handleStartDateChange = async (value: string) => {
     if (!value) {
@@ -306,13 +315,17 @@ export const TaskDetailModal: React.FC<Props> = ({
       return;
     }
     const time = currentTask.start_date
-      ? dayjs(currentTask.start_date).format('HH:mm')
+      ? formatBeijingTime(currentTask.start_date)
       : '09:00';
-    const nextStart = dayjs(`${value}T${time}`);
+    const nextStart = toBeijing(`${value}T${time}`);
+    if (!nextStart || !nextStart.isValid()) {
+      setUpdateError('开始时间无效');
+      return;
+    }
     const payload: UpdateTaskPayload = { start_date: formatDateTime(nextStart) };
     if (currentTask.due_date) {
-      const currentDue = dayjs(currentTask.due_date);
-      if (currentDue.isBefore(nextStart)) {
+      const currentDue = toBeijing(currentTask.due_date);
+      if (currentDue && currentDue.isBefore(nextStart)) {
         payload.due_date = formatDateTime(nextStart);
       }
     }
@@ -321,12 +334,16 @@ export const TaskDetailModal: React.FC<Props> = ({
 
   const handleStartTimeChange = async (value: string) => {
     if (!currentTask.start_date) return;
-    const date = dayjs(currentTask.start_date).format('YYYY-MM-DD');
-    const nextStart = dayjs(`${date}T${value}`);
+    const date = formatBeijingDate(currentTask.start_date);
+    const nextStart = toBeijing(`${date}T${value}`);
+    if (!nextStart || !nextStart.isValid()) {
+      setUpdateError('开始时间无效');
+      return;
+    }
     const payload: UpdateTaskPayload = { start_date: formatDateTime(nextStart) };
     if (currentTask.due_date) {
-      const currentDue = dayjs(currentTask.due_date);
-      if (currentDue.isBefore(nextStart)) {
+      const currentDue = toBeijing(currentTask.due_date);
+      if (currentDue && currentDue.isBefore(nextStart)) {
         payload.due_date = formatDateTime(nextStart);
       }
     }
@@ -339,13 +356,17 @@ export const TaskDetailModal: React.FC<Props> = ({
       return;
     }
     const time = currentTask.due_date
-      ? dayjs(currentTask.due_date).format('HH:mm')
+      ? formatBeijingTime(currentTask.due_date)
       : '18:00';
-    const nextDue = dayjs(`${value}T${time}`);
+    const nextDue = toBeijing(`${value}T${time}`);
+    if (!nextDue || !nextDue.isValid()) {
+      setUpdateError('截止时间无效');
+      return;
+    }
     const payload: UpdateTaskPayload = { due_date: formatDateTime(nextDue) };
     if (currentTask.start_date) {
-      const currentStart = dayjs(currentTask.start_date);
-      if (currentStart.isAfter(nextDue)) {
+      const currentStart = toBeijing(currentTask.start_date);
+      if (currentStart && currentStart.isAfter(nextDue)) {
         payload.start_date = formatDateTime(nextDue);
       }
     }
@@ -354,12 +375,16 @@ export const TaskDetailModal: React.FC<Props> = ({
 
   const handleDueTimeChange = async (value: string) => {
     if (!currentTask.due_date) return;
-    const date = dayjs(currentTask.due_date).format('YYYY-MM-DD');
-    const nextDue = dayjs(`${date}T${value}`);
+    const date = formatBeijingDate(currentTask.due_date);
+    const nextDue = toBeijing(`${date}T${value}`);
+    if (!nextDue || !nextDue.isValid()) {
+      setUpdateError('截止时间无效');
+      return;
+    }
     const payload: UpdateTaskPayload = { due_date: formatDateTime(nextDue) };
     if (currentTask.start_date) {
-      const currentStart = dayjs(currentTask.start_date);
-      if (currentStart.isAfter(nextDue)) {
+      const currentStart = toBeijing(currentTask.start_date);
+      if (currentStart && currentStart.isAfter(nextDue)) {
         payload.start_date = formatDateTime(nextDue);
       }
     }
@@ -367,16 +392,16 @@ export const TaskDetailModal: React.FC<Props> = ({
   };
 
   const startDateValue = currentTask.start_date
-    ? dayjs(currentTask.start_date).format('YYYY-MM-DD')
+    ? formatBeijingDate(currentTask.start_date)
     : '';
   const startTimeValue = currentTask.start_date
-    ? dayjs(currentTask.start_date).format('HH:mm')
+    ? formatBeijingTime(currentTask.start_date)
     : '';
   const dueDateValue = currentTask.due_date
-    ? dayjs(currentTask.due_date).format('YYYY-MM-DD')
+    ? formatBeijingDate(currentTask.due_date)
     : '';
   const dueTimeValue = currentTask.due_date
-    ? dayjs(currentTask.due_date).format('HH:mm')
+    ? formatBeijingTime(currentTask.due_date)
     : '';
 
   const addSubtask = async () => {
@@ -773,16 +798,16 @@ export const TaskDetailModal: React.FC<Props> = ({
           currentTask.cancelled_at) && (
           <div style={{ fontSize: 12, color: '#777', marginBottom: 12 }}>
             {currentTask.created_at && (
-              <div>创建时间：{dayjs(currentTask.created_at).format('YYYY-MM-DD HH:mm')}</div>
+              <div>创建时间：{formatBeijingFromUtc(currentTask.created_at)}</div>
             )}
             {currentTask.updated_at && (
-              <div>更新时间：{dayjs(currentTask.updated_at).format('YYYY-MM-DD HH:mm')}</div>
+              <div>更新时间：{formatBeijingFromUtc(currentTask.updated_at)}</div>
             )}
             {currentTask.status === 'done' && (
               <div>
                 实际完成时间：
                 {currentTask.completed_at
-                  ? dayjs(currentTask.completed_at).format('YYYY-MM-DD HH:mm')
+                  ? formatBeijingFromUtc(currentTask.completed_at)
                   : '未记录'}
               </div>
             )}
@@ -790,7 +815,7 @@ export const TaskDetailModal: React.FC<Props> = ({
               <div>
                 取消时间：
                 {currentTask.cancelled_at
-                  ? dayjs(currentTask.cancelled_at).format('YYYY-MM-DD HH:mm')
+                  ? formatBeijingFromUtc(currentTask.cancelled_at)
                   : '未记录'}
               </div>
             )}

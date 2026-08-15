@@ -3,27 +3,27 @@
     <LogoutButton />
     <view class="card">
       <view class="role-row">
-        <text class="label">角色</text>
+        <text class="label">{{ t('role') }}</text>
         <picker :range="roleOptions" range-key="label" @change="onRoleChange">
           <view class="picker-input">{{ roleLabel }}</view>
         </picker>
       </view>
       <view class="chip-row">
-        <text class="chip" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">全部</text>
-        <text class="chip" :class="{ active: activeFilter === 'in_progress' }" @click="activeFilter = 'in_progress'">进行中</text>
-        <text class="chip" :class="{ active: activeFilter === 'done' }" @click="activeFilter = 'done'">已完成</text>
+        <text class="chip" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">{{ t('filter.all') }}</text>
+        <text class="chip" :class="{ active: activeFilter === 'in_progress' }" @click="activeFilter = 'in_progress'">{{ t('status.in_progress') }}</text>
+        <text class="chip" :class="{ active: activeFilter === 'done' }" @click="activeFilter = 'done'">{{ t('status.done') }}</text>
       </view>
       <view class="task-card" v-for="task in tasksView" :key="task.id" @click="openTask(task.id)">
         <view class="task-info">
           <text class="task-title">{{ task.title }}</text>
-          <text class="task-meta">截止 {{ task.dueLabel }} · {{ task.roleName }}</text>
+          <text class="task-meta">{{ t('due.label') }} {{ task.dueLabel }} · {{ task.roleName }}</text>
         </view>
         <view class="task-tags">
           <text class="tag" :class="task.priority">{{ priorityText(task.priority) }}</text>
           <text class="tag status">{{ statusText(task.status) }}</text>
         </view>
       </view>
-      <view v-if="!tasksView.length" class="empty">暂无任务</view>
+      <view v-if="!tasksView.length" class="empty">{{ t('tasks.empty') }}</view>
     </view>
   </view>
 </template>
@@ -36,11 +36,12 @@ import { fetchRoles } from '../../services/roles';
 import { fetchTasks } from '../../services/tasks';
 import { formatBeijingDate, formatBeijingTime } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
+import { t, locale, initLocale } from '../../locale';
 
 const activeFilter = ref('all');
 const tasks = ref([]);
 const roles = ref([]);
-const roleOptions = ref([{ label: '全部', value: null }]);
+const roleOptions = ref([{ label: t('role.all'), value: null }]);
 const selectedRoleIndex = ref(0);
 
 const roleMap = computed(() => {
@@ -59,19 +60,19 @@ const tasksView = computed(() => {
     return {
       ...task,
       dueLabel,
-      roleName: roleMap.value[task.role_id] || '未分配'
+      roleName: roleMap.value[task.role_id] || t('task.detail.unassigned')
     };
   });
 });
 
-const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
+const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? t('role.all'));
 
 const loadRoles = async () => {
   try {
     const data = await fetchRoles();
     roles.value = data;
     roleOptions.value = [
-      { label: '全部', value: null },
+      { label: t('role.all'), value: null },
       ...data.map((role) => ({ label: role.name, value: role.id })),
     ];
   } catch {
@@ -121,16 +122,16 @@ const loadTasks = async () => {
 };
 
 const priorityText = (value) => {
-  if (value === 'high') return '高';
-  if (value === 'medium') return '中';
-  return '低';
+  if (value === 'high') return t('priority.high');
+  if (value === 'medium') return t('priority.medium');
+  return t('priority.low');
 };
 
 const statusText = (value) => {
-  if (value === 'todo') return '待办';
-  if (value === 'in_progress') return '进行中';
-  if (value === 'cancelled') return '已取消';
-  return '已完成';
+  if (value === 'todo') return t('status.todo');
+  if (value === 'in_progress') return t('status.in_progress');
+  if (value === 'cancelled') return t('status.cancelled');
+  return t('status.done');
 };
 
 const openTask = (taskId) => {
@@ -150,6 +151,7 @@ watch(activeFilter, () => {
 });
 
 onShow(() => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.tasks') });
   if (!ensureAuth()) return;
   void loadRoles().then(() => {
     syncRoleSelection();
@@ -172,13 +174,13 @@ onShow(() => {
 
 .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .picker-input {
   padding: 6px 8px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 12px;
 }
 
@@ -189,7 +191,7 @@ onShow(() => {
 }
 
 .task-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 10px;
   margin-bottom: 8px;
@@ -207,7 +209,7 @@ onShow(() => {
 
 .task-meta {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 4px;
 }
 
@@ -221,8 +223,8 @@ onShow(() => {
   padding: 2px 6px;
   border-radius: 999px;
   font-size: 10px;
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  color: #776b7f;
 }
 
 .tag.high {
@@ -250,6 +252,6 @@ onShow(() => {
 
 .empty {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 </style>

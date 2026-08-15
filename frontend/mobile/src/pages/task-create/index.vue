@@ -2,9 +2,9 @@
   <view class="page">
     <LogoutButton />
     <view class="card">
-      <text class="section-title">快速添加任务</text>
+      <text class="section-title">{{ t('task.create.title') }}</text>
       <view class="form-field">
-        <text class="label">任务标题 *</text>
+        <text class="label">{{ t('task.title.required') }}</text>
         <textarea
           class="textarea title-textarea"
           :value="title"
@@ -14,11 +14,11 @@
           @focus="onFocusTitle"
           @blur="onBlurTitle"
           @input="onTitleInput"
-          placeholder="例如：整理本周计划"
+          :placeholder="t('task.title.ph')"
         />
       </view>
       <view class="form-field">
-        <text class="label">描述</text>
+        <text class="label">{{ t('task.desc') }}</text>
         <textarea
           class="textarea"
           :value="description"
@@ -28,26 +28,26 @@
           @focus="onFocusDesc"
           @blur="onBlurDesc"
           @input="onDescriptionInput"
-          placeholder="补充说明（可选）"
+          :placeholder="t('task.desc.ph')"
         />
       </view>
       <view class="form-field">
-        <text class="label">优先级</text>
+        <text class="label">{{ t('task.priority') }}</text>
         <picker :range="priorityOptions" range-key="label" :value="selectedPriorityIndex" @change="onPriorityChange">
           <view class="picker-input">{{ priorityLabel }}</view>
         </picker>
       </view>
       <view class="form-field">
-        <text class="label">分类</text>
+        <text class="label">{{ t('task.category') }}</text>
         <view class="picker-row">
           <picker class="picker-flex" :range="categoryOptions" range-key="label" :value="selectedCategoryIndex" @change="onCategoryChange">
             <view class="picker-input">{{ categoryLabel }}</view>
           </picker>
-          <view class="picker-manage" @click="openCategoryManager">管理</view>
+          <view class="picker-manage" @click="openCategoryManager">{{ t('task.category.manage') }}</view>
         </view>
       </view>
       <view class="form-field">
-        <text class="label">角色</text>
+        <text class="label">{{ t('task.role') }}</text>
         <picker :range="roleOptions" range-key="label" :value="selectedRoleIndex" @change="onRoleChange">
           <view class="picker-input">{{ roleLabel }}</view>
         </picker>
@@ -55,10 +55,10 @@
       <view class="form-field">
         <view class="time-grid">
           <view class="time-col">
-            <text class="label">计划开始</text>
+            <text class="label">{{ t('task.plan.start') }}</text>
             <view class="picker-row">
               <picker mode="date" :value="startDate" @change="onStartDateChange">
-                <view class="picker-input">{{ startDate || '未设置' }}</view>
+                <view class="picker-input">{{ startDate || t('task.not.set') }}</view>
               </picker>
               <picker mode="time" :value="startTime" @change="onStartTimeChange">
                 <view class="picker-input time">{{ startTime || '09:00' }}</view>
@@ -66,10 +66,10 @@
             </view>
           </view>
           <view class="time-col">
-            <text class="label">截止时间</text>
+            <text class="label">{{ t('task.due.time') }}</text>
             <view class="picker-row">
               <picker mode="date" :value="dueDate" @change="onDueDateChange">
-                <view class="picker-input">{{ dueDate || '未设置' }}</view>
+                <view class="picker-input">{{ dueDate || t('task.not.set') }}</view>
               </picker>
               <picker mode="time" :value="dueTime" @change="onDueTimeChange">
                 <view class="picker-input time">{{ dueTime || '23:59' }}</view>
@@ -79,24 +79,33 @@
         </view>
       </view>
       <view class="action-row">
-        <button class="btn" size="mini" @click="cancel">取消</button>
+        <button class="btn" size="mini" @click="cancel">{{ t('task.cancel') }}</button>
         <button class="btn primary" size="mini" :disabled="submitting" @click="submit">
-          {{ submitting ? '保存中...' : '保存' }}
+          {{ submitting ? t('task.saving') : t('task.save') }}
         </button>
       </view>
     </view>
+    <PromptDialog
+      v-model:visible="promptVisible"
+      :title="promptTitle"
+      :placeholder="promptPlaceholder"
+      :value="promptValue"
+      @confirm="handlePromptConfirm"
+    />
   </view>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { ensureAuth, getRoleId, setRoleId } from '../../utils/auth';
+import { onLoad, onShow } from '@dcloudio/uni-app';
+import { requireAuth, getRoleId, setRoleId } from '../../utils/auth';
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../../services/categories';
+import PromptDialog from '../../components/PromptDialog.vue';
 import { fetchRoles } from '../../services/roles';
 import { createTask } from '../../services/tasks';
 import { formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
+import { t, locale, initLocale } from '../../locale';
 
 const title = ref('');
 const description = ref('');
@@ -108,22 +117,28 @@ const dueDate = ref('');
 const dueTime = ref('23:59');
 const submitting = ref(false);
 
-const priorityOptions = [
-  { label: '高', value: 'high' },
-  { label: '中', value: 'medium' },
-  { label: '低', value: 'low' },
-];
+const priorityOptions = computed(() => [
+  { label: t('priority.high'), value: 'high' },
+  { label: t('priority.medium'), value: 'medium' },
+  { label: t('priority.low'), value: 'low' },
+]);
 const selectedPriorityIndex = ref(1);
 
-const categoryOptions = ref([{ label: '未分类', value: null }]);
+const categoryOptions = ref([{ label: t('category.uncategorized'), value: null }]);
 const selectedCategoryIndex = ref(0);
 
-const roleOptions = ref([{ label: '全部', value: null }]);
+const roleOptions = ref([{ label: t('role.all'), value: null }]);
 const selectedRoleIndex = ref(0);
+const promptVisible = ref(false);
+const promptTitle = ref('');
+const promptPlaceholder = ref('');
+const promptValue = ref('');
+const promptType = ref('');
+const voiceDraft = ref(null);
 
-const priorityLabel = computed(() => priorityOptions[selectedPriorityIndex.value]?.label ?? '中');
-const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? '未分类');
-const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
+const priorityLabel = computed(() => priorityOptions.value[selectedPriorityIndex.value]?.label ?? t('priority.medium'));
+const categoryLabel = computed(() => categoryOptions.value[selectedCategoryIndex.value]?.label ?? t('category.uncategorized'));
+const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? t('role.all'));
 
 const onPriorityChange = (event) => {
   selectedPriorityIndex.value = Number(event.detail.value);
@@ -166,7 +181,7 @@ const onCategoryChange = (event) => {
 };
 
 const openCategoryManager = () => {
-  const actions = ['新增分类', '重命名当前分类', '删除当前分类'];
+  const actions = [t('category.create'), t('category.rename.current'), t('category.delete.current')];
   uni.showActionSheet({
     itemList: actions,
     success: (res) => {
@@ -177,62 +192,36 @@ const openCategoryManager = () => {
   });
 };
 
+const openPrompt = (type, title, placeholder, value = '') => {
+  promptType.value = type;
+  promptTitle.value = title;
+  promptPlaceholder.value = placeholder;
+  promptValue.value = value;
+  promptVisible.value = true;
+};
+
 const handleCreateCategory = () => {
-  uni.showModal({
-    title: '新增分类',
-    editable: true,
-    placeholderText: '请输入分类名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await createCategory({ name });
-        await loadCategories();
-        const idx = categoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) selectedCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '新增失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-create', t('category.create'), t('category.name.ph'));
 };
 
 const handleRenameCategory = () => {
   const current = categoryOptions.value[selectedCategoryIndex.value];
   if (!current || current.value === null) {
-    uni.showToast({ title: '请选择要重命名的分类', icon: 'none' });
+    uni.showToast({ title: t('category.select.rename'), icon: 'none' });
     return;
   }
-  uni.showModal({
-    title: '重命名分类',
-    editable: true,
-    placeholderText: '请输入新名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await updateCategory(current.value, { name });
-        await loadCategories();
-        const idx = categoryOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) selectedCategoryIndex.value = idx;
-      } catch {
-        uni.showToast({ title: '重命名失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('category-rename', t('category.rename'), t('category.new.name'), current.label);
 };
 
 const handleDeleteCategory = () => {
   const current = categoryOptions.value[selectedCategoryIndex.value];
   if (!current || current.value === null) {
-    uni.showToast({ title: '请选择要删除的分类', icon: 'none' });
+    uni.showToast({ title: t('category.select.delete'), icon: 'none' });
     return;
   }
   uni.showModal({
-    title: '删除分类',
-    content: `确定删除「${current.label}」吗？`,
+    title: t('category.delete'),
+    content: t('category.confirm.delete', { name: current.label }),
     success: async (res) => {
       if (!res.confirm) return;
       try {
@@ -240,10 +229,38 @@ const handleDeleteCategory = () => {
         await loadCategories();
         selectedCategoryIndex.value = 0;
       } catch {
-        uni.showToast({ title: '删除失败', icon: 'none' });
+        uni.showToast({ title: t('task.delete.fail'), icon: 'none' });
       }
     },
   });
+};
+
+const handlePromptConfirm = async (value) => {
+  const name = (value || '').trim();
+  if (!name) return;
+  if (promptType.value === 'category-create') {
+    try {
+      await createCategory({ name });
+      await loadCategories();
+      const idx = categoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) selectedCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: t('task.add.fail'), icon: 'none' });
+    }
+  }
+  if (promptType.value === 'category-rename') {
+    const current = categoryOptions.value[selectedCategoryIndex.value];
+    if (!current || current.value === null) return;
+    try {
+      await updateCategory(current.value, { name });
+      await loadCategories();
+      const idx = categoryOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) selectedCategoryIndex.value = idx;
+    } catch {
+      uni.showToast({ title: t('task.rename.fail'), icon: 'none' });
+    }
+  }
+  promptType.value = '';
 };
 
 const onRoleChange = (event) => {
@@ -284,10 +301,47 @@ const buildDefaultDates = () => {
   dueDate.value = today;
 };
 
+const extractDateTimeParts = (value) => {
+  if (!value) return { date: '', time: '' };
+  const normalized = String(value).replace(' ', 'T');
+  const [datePart, timePart] = normalized.split('T');
+  const time = timePart ? timePart.slice(0, 5) : '';
+  return { date: datePart || '', time };
+};
+
+const applyVoiceDraft = (draft) => {
+  if (!draft) return;
+  title.value = draft.title || '';
+  description.value = draft.description || '';
+  if (draft.priority) {
+    const idx = priorityOptions.value.findIndex((item) => item.value === draft.priority);
+    if (idx >= 0) selectedPriorityIndex.value = idx;
+  }
+  if (draft.start_date) {
+    const { date, time } = extractDateTimeParts(draft.start_date);
+    if (date) startDate.value = date;
+    if (time) startTime.value = time;
+  }
+  if (draft.due_date) {
+    const { date, time } = extractDateTimeParts(draft.due_date);
+    if (date) dueDate.value = date;
+    if (time) dueTime.value = time;
+  }
+  if (draft.role_id) {
+    const idx = roleOptions.value.findIndex((item) => item.value === draft.role_id);
+    if (idx >= 0) selectedRoleIndex.value = idx;
+    setRoleId(draft.role_id);
+  }
+  if (draft.category_id) {
+    const idx = categoryOptions.value.findIndex((item) => item.value === draft.category_id);
+    if (idx >= 0) selectedCategoryIndex.value = idx;
+  }
+};
+
 const submit = async () => {
   const trimmed = title.value.trim();
   if (!trimmed) {
-    uni.showToast({ title: '请输入任务标题', icon: 'none' });
+    uni.showToast({ title: t('task.title.empty'), icon: 'none' });
     return;
   }
   submitting.value = true;
@@ -295,7 +349,7 @@ const submit = async () => {
     const payload = {
       title: trimmed,
       description: description.value.trim() || null,
-      priority: priorityOptions[selectedPriorityIndex.value]?.value ?? 'medium',
+      priority: priorityOptions.value[selectedPriorityIndex.value]?.value ?? 'medium',
     };
     const categoryId = categoryOptions.value[selectedCategoryIndex.value]?.value;
     if (categoryId) payload.category_id = categoryId;
@@ -311,12 +365,12 @@ const submit = async () => {
       const startTs = new Date(startValue).getTime();
       const dueTs = new Date(dueValue).getTime();
       if (!Number.isNaN(startTs) && !Number.isNaN(dueTs) && dueTs < startTs) {
-        uni.showToast({ title: '截止时间不能早于开始时间', icon: 'none' });
+        uni.showToast({ title: t('task.due.before.start'), icon: 'none' });
         return;
       }
     }
     await createTask(payload);
-    uni.showToast({ title: '已创建', icon: 'success' });
+    uni.showToast({ title: t('task.created'), icon: 'success' });
     setTimeout(() => {
       uni.switchTab({ url: '/pages/home/index' });
     }, 300);
@@ -338,7 +392,7 @@ const submit = async () => {
 const loadCategories = async () => {
   try {
     const data = await fetchCategories();
-    categoryOptions.value = [{ label: '未分类', value: null }, ...data.map((item) => ({
+    categoryOptions.value = [{ label: t('category.uncategorized'), value: null }, ...data.map((item) => ({
       label: item.name,
       value: item.id,
     }))];
@@ -350,7 +404,7 @@ const loadCategories = async () => {
 const loadRoles = async () => {
   try {
     const data = await fetchRoles();
-    roleOptions.value = [{ label: '全部', value: null }, ...data.map((role) => ({
+    roleOptions.value = [{ label: t('role.all'), value: null }, ...data.map((role) => ({
       label: role.name,
       value: role.id,
     }))];
@@ -358,15 +412,28 @@ const loadRoles = async () => {
     const idx = roleOptions.value.findIndex((item) => item.value === stored);
     selectedRoleIndex.value = idx >= 0 ? idx : 0;
   } catch {
-    roleOptions.value = [{ label: '全部', value: null }];
+    roleOptions.value = [{ label: t('role.all'), value: null }];
   }
 };
 
+onLoad(() => {
+  const stored = uni.getStorageSync('voiceDraft');
+  if (stored) {
+    voiceDraft.value = stored;
+    uni.removeStorageSync('voiceDraft');
+  }
+});
+
 onShow(async () => {
-  if (!ensureAuth()) return;
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.task.create') });
+  if (!requireAuth()) return;
   buildDefaultDates();
   await loadRoles();
   await loadCategories();
+  if (voiceDraft.value) {
+    applyVoiceDraft(voiceDraft.value);
+    voiceDraft.value = null;
+  }
 });
 </script>
 
@@ -379,17 +446,17 @@ onShow(async () => {
 }
 
 .card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  border-radius: 18px;
+  padding: 16px;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 
 .section-title {
-  font-size: var(--font-body);
+  font-size: 14px;
   font-weight: 700;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 12px;
 }
 
 .form-field {
@@ -398,7 +465,7 @@ onShow(async () => {
 
 .label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 6px;
   display: block;
 }
@@ -406,7 +473,7 @@ onShow(async () => {
 .input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -419,7 +486,7 @@ onShow(async () => {
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 11px;
@@ -434,7 +501,7 @@ onShow(async () => {
 .picker-input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 11px;
@@ -453,10 +520,10 @@ onShow(async () => {
 
 .picker-manage {
   font-size: 11px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
   display: flex;
   align-items: center;

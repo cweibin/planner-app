@@ -4,6 +4,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import { useNavigate } from 'react-router-dom';
 import { Event, fetchCalendarEvents, updateEvent, deleteEvent, EventUpdate } from '../services/events';
 import { fetchTodayTasks, Task } from '../services/tasks';
+import { formatBeijing, formatBeijingDate, nowBeijing, toBeijing, toBeijingFromUtc } from '../utils/time';
 
 dayjs.extend(isoWeek);
 
@@ -13,7 +14,7 @@ interface CalendarPageProps {
 
 export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => {
   const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(dayjs());
+  const [currentDate, setCurrentDate] = useState(nowBeijing());
   const [events, setEvents] = useState<Event[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +62,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
   };
 
   const handleToday = () => {
-    setCurrentDate(dayjs());
+    setCurrentDate(nowBeijing());
   };
 
   const handleDateNavigate = (date: string) => {
@@ -96,38 +97,43 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
   };
 
   const getEventsForDate = (date: string) => {
-    const dateStr = dayjs(date).format('YYYY-MM-DD');
-    return events.filter((e) => dayjs(e.start_time).format('YYYY-MM-DD') === dateStr);
+    const dateStr = formatBeijingDate(date);
+    return events.filter((e) => formatBeijingDate(e.start_time) === dateStr);
   };
 
   const getTasksForDate = (date: string) => {
-    const dateStr = dayjs(date).format('YYYY-MM-DD');
+    const dateStr = formatBeijingDate(date);
     return tasks.filter((t) => {
       if (!t.start_date && !t.due_date) return false;
-      const start = t.start_date ? dayjs(t.start_date).startOf('day') : null;
-      const end = t.due_date ? dayjs(t.due_date).endOf('day') : null;
+      const start = t.start_date ? toBeijing(t.start_date)?.startOf('day') ?? null : null;
+      const end = t.due_date ? toBeijing(t.due_date)?.endOf('day') ?? null : null;
       const effectiveStart = start ?? (end ? end.startOf('day') : null);
       const effectiveEnd = end ?? (start ? start.endOf('day') : null);
       if (!effectiveStart || !effectiveEnd) return false;
-      const current = dayjs(dateStr);
+      const current = toBeijing(dateStr);
+      if (!current) return false;
       return !current.isBefore(effectiveStart, 'day') && !current.isAfter(effectiveEnd, 'day');
     });
   };
 
   const getTaskStatusCountsForDate = (date: string) => {
-    const dayStart = dayjs(date).startOf('day');
+    const dayStart = toBeijing(date)?.startOf('day') ?? nowBeijing().startOf('day');
     const dayTasks = getTasksForDate(date);
-    const now = dayjs();
+    const now = nowBeijing();
     const isOverdueTask = (task: Task) =>
-      !!task.due_date && dayjs(task.due_date).isBefore(now);
+      !!task.due_date && !!toBeijing(task.due_date) && toBeijing(task.due_date)!.isBefore(now);
     const isLateCompletion = (task: Task) =>
       !!task.due_date &&
       !!task.completed_at &&
-      dayjs(task.completed_at).isAfter(dayjs(task.due_date));
+      !!toBeijingFromUtc(task.completed_at) &&
+      !!toBeijing(task.due_date) &&
+      toBeijingFromUtc(task.completed_at)!.isAfter(toBeijing(task.due_date)!);
     const isLateCancellation = (task: Task) =>
       !!task.due_date &&
       !!task.cancelled_at &&
-      dayjs(task.cancelled_at).isAfter(dayjs(task.due_date));
+      !!toBeijingFromUtc(task.cancelled_at) &&
+      !!toBeijing(task.due_date) &&
+      toBeijingFromUtc(task.cancelled_at)!.isAfter(toBeijing(task.due_date)!);
 
     const todoTasks = dayTasks.filter((t) => t.status === 'todo');
     const inProgressTasks = dayTasks.filter((t) => t.status === 'in_progress');
@@ -135,13 +141,15 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
       (t) =>
         t.status === 'done' &&
         t.completed_at &&
-        dayjs(t.completed_at).isSame(dayStart, 'day'),
+        !!toBeijingFromUtc(t.completed_at) &&
+        toBeijingFromUtc(t.completed_at)!.isSame(dayStart, 'day'),
     );
     const cancelledTasks = tasks.filter(
       (t) =>
         t.status === 'cancelled' &&
         t.cancelled_at &&
-        dayjs(t.cancelled_at).isSame(dayStart, 'day'),
+        !!toBeijingFromUtc(t.cancelled_at) &&
+        toBeijingFromUtc(t.cancelled_at)!.isSame(dayStart, 'day'),
     );
     return {
       todo: todoTasks.length,
@@ -155,7 +163,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
     };
   };
 
-  const isToday = (date: string) => dayjs(date).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD');
+  const isToday = (date: string) => formatBeijingDate(date) === nowBeijing().format('YYYY-MM-DD');
 
   const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
   const navButtonStyle: React.CSSProperties = {
@@ -232,7 +240,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
               const day = idx - startOffset + 1;
               const date = currentDate.date(day);
               const isCurrentMonth = day > 0 && day <= currentDate.daysInMonth();
-            const dateStr = isCurrentMonth ? date.format('YYYY-MM-DD') : '';
+            const dateStr = isCurrentMonth ? formatBeijingDate(date) : '';
 
             const taskCounts = dateStr
               ? getTaskStatusCountsForDate(dateStr)
@@ -246,7 +254,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ currentRoleId }) => 
                   cancelled: 0,
                   cancelledOverdue: 0,
                 };
-            const isFutureDate = dateStr ? dayjs(dateStr).isAfter(dayjs(), 'day') : false;
+            const isFutureDate = dateStr
+              ? (() => {
+                  const target = toBeijing(dateStr);
+                  return target ? target.isAfter(nowBeijing(), 'day') : false;
+                })()
+              : false;
             const completionBase = taskCounts.todo + taskCounts.inProgress + taskCounts.done;
             const completionRate =
               completionBase > 0 ? Math.round((taskCounts.done / completionBase) * 100) : 0;
@@ -438,10 +451,14 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ event, onClose, onSave,
   const [title, setTitle] = useState(event?.title ?? '');
   const [description, setDescription] = useState(event?.description ?? '');
   const [startTime, setStartTime] = useState(
-    event ? dayjs(event.start_time).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
+    event
+      ? formatBeijing(event.start_time, 'YYYY-MM-DDTHH:mm')
+      : nowBeijing().format('YYYY-MM-DDTHH:mm'),
   );
   const [endTime, setEndTime] = useState(
-    event ? dayjs(event.end_time).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    event
+      ? formatBeijing(event.end_time, 'YYYY-MM-DDTHH:mm')
+      : nowBeijing().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
   );
   const [color, setColor] = useState(event?.color ?? '#3b82f6');
   const [saving, setSaving] = useState(false);
@@ -454,11 +471,17 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ event, onClose, onSave,
     }
     setSaving(true);
     try {
+      const startValue = toBeijing(startTime);
+      const endValue = toBeijing(endTime);
+      if (!startValue || !startValue.isValid() || !endValue || !endValue.isValid()) {
+        window.alert('请选择有效的时间');
+        return;
+      }
       onSave({
         title: title.trim(),
         description: description.trim() || undefined,
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
+        start_time: startValue.toISOString(),
+        end_time: endValue.toISOString(),
         color,
       });
     } catch {

@@ -5,30 +5,31 @@
     <view class="welcome card">
       <view class="welcome-left">
         <view class="welcome-row">
-          <text class="welcome-title">早上好</text>
-          <text v-if="userDisplay" class="welcome-user">{{ userDisplay }}</text>
+          <text class="welcome-title">{{ t('greeting') }}</text>
+          <text class="welcome-user profile-link" @click="openCompleteProfile">{{ userDisplay || t('complete.profile') }}</text>
+          <text class="welcome-edit" @click="openCompleteProfile">✎</text>
         </view>
       </view>
       <view class="welcome-right">
         <view class="role-inline">
-          <text class="label">角色</text>
+          <text class="label">{{ t('role') }}</text>
           <picker :range="roleOptions" range-key="label" @change="onRoleChange">
             <view class="picker-input">{{ roleLabel }}</view>
           </picker>
-          <view class="role-manage" @click="openRoleManager">管理</view>
+          <view class="role-manage" @click="openRoleManager">{{ t('role.manage') }}</view>
         </view>
       </view>
     </view>
     <view class="card header">
       <view class="month-bar">
         <view class="month-select">
-          <text class="month-hint">选择月份：</text>
+          <text class="month-hint">{{ t('select.month') }}</text>
           <view class="month-input" @click="openMonthPicker">{{ monthDisplay }}</view>
         </view>
         <view class="month-actions">
-          <button class="btn" size="mini" @click="shiftMonth(-1)">&lt;</button>
-          <button class="btn primary" size="mini" @click="goCurrentMonth">本月</button>
-          <button class="btn" size="mini" @click="shiftMonth(1)">&gt;</button>
+          <view class="btn" @click="shiftMonth(-1)">‹</view>
+          <view class="btn primary" @click="goCurrentMonth">{{ t('this.month') }}</view>
+          <view class="btn" @click="shiftMonth(1)">›</view>
         </view>
       </view>
     </view>
@@ -42,7 +43,7 @@
           v-for="day in calendarDays"
           :key="day.key"
           class="calendar-day"
-          :class="{ active: day.date === selectedDate, today: day.isToday, full: day.isFullDone, empty: !day.isCurrentMonth }"
+          :class="{ active: day.date === selectedDate, today: day.isToday, full: day.isFullDone, 'has-upcoming': day.hasUpcomingTodo, empty: !day.isCurrentMonth }"
           @click="handleDaySelect(day)"
         >
           <template v-if="day.isCurrentMonth">
@@ -53,17 +54,21 @@
       </view>
       <view class="legend">
         <text class="legend-dot" />
-        <text class="legend-text">已完成 / 总任务数</text>
+        <text class="legend-text">{{ t('calendar.legend') }}</text>
+      </view>
+    <view class="legend">
+        <text class="legend-dot upcoming" />
+        <text class="legend-text">{{ t('calendar.legend.upcoming') }}</text>
       </view>
     </view>
 
     <view v-if="showMonthPicker" class="modal-mask" @click="closeMonthPicker">
       <view class="modal-card" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">选择月份</text>
+          <text class="modal-title">{{ t('select.month') }}</text>
           <view class="modal-actions">
-            <button class="btn" size="mini" @click="closeMonthPicker">取消</button>
-            <button class="btn primary" size="mini" @click="confirmMonthPicker">确定</button>
+            <button class="btn" size="mini" @click="closeMonthPicker">{{ t('cancel') }}</button>
+            <button class="btn primary" size="mini" @click="confirmMonthPicker">{{ t('confirm') }}</button>
           </view>
         </view>
         <picker-view
@@ -78,6 +83,14 @@
         </picker-view>
       </view>
     </view>
+
+    <PromptDialog
+      v-model:visible="promptVisible"
+      :title="promptTitle"
+      :placeholder="promptPlaceholder"
+      :value="promptValue"
+      @confirm="handlePromptConfirm"
+    />
   </view>
 </template>
 
@@ -88,11 +101,13 @@ import { ensureAuth, getRoleId, setRoleId } from '../../utils/auth';
 import { fetchBoardTasks } from '../../services/tasks';
 import { createRole, deleteRole, fetchRoles, updateRole } from '../../services/roles';
 import { fetchProfile } from '../../services/auth';
-import { formatBeijingDate, formatDate } from '../../utils/date';
+import { formatBeijingDate, formatBeijingDateFromUtc, formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
+import PromptDialog from '../../components/PromptDialog.vue';
 import FloatingAddButton from '../../components/FloatingAddButton.vue';
+import { t, locale, initLocale } from '../../locale';
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+const weekDays = computed(() => [t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')]);
 const todayStr = formatDate(new Date());
 const currentMonth = ref(new Date());
 const selectedDate = ref(todayStr);
@@ -103,20 +118,22 @@ const tasksByStatus = ref({
   cancelled: []
 });
 const loading = ref(false);
-const roleOptions = ref([{ label: '全部', value: null }]);
+const roleOptions = ref([{ label: t('role.all'), value: null }]);
 const selectedRoleIndex = ref(0);
 const userProfile = ref(null);
 const actionSheetOpen = ref(false);
+const promptVisible = ref(false);
+const promptTitle = ref('');
+const promptPlaceholder = ref('');
+const promptValue = ref('');
+const promptType = ref('');
 
-const currentMonthLabel = computed(() => {
-  const date = currentMonth.value;
-  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-});
+const currentMonthLabel = computed(() => formatMonthLabel(currentMonth.value));
 
 const monthDisplay = computed(() => currentMonthLabel.value);
 
 const selectedRoleId = computed(() => roleOptions.value[selectedRoleIndex.value]?.value ?? null);
-const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? '全部');
+const roleLabel = computed(() => roleOptions.value[selectedRoleIndex.value]?.label ?? t('role.all'));
 const userDisplay = computed(() => {
   const profile = userProfile.value;
   if (!profile) return '';
@@ -143,10 +160,10 @@ const getTaskStatusCountsForDate = (dateStr) => {
   const todoTasks = (tasksByStatus.value.todo || []).filter((t) => isTaskActiveOnDate(t, dateStr));
   const inProgressTasks = (tasksByStatus.value.in_progress || []).filter((t) => isTaskActiveOnDate(t, dateStr));
   const doneTasks = (tasksByStatus.value.done || []).filter(
-    (t) => t.completed_at && formatBeijingDate(t.completed_at) === dateStr,
+    (t) => t.completed_at && formatBeijingDateFromUtc(t.completed_at) === dateStr,
   );
   const cancelledTasks = (tasksByStatus.value.cancelled || []).filter(
-    (t) => t.cancelled_at && formatBeijingDate(t.cancelled_at) === dateStr,
+    (t) => t.cancelled_at && formatBeijingDateFromUtc(t.cancelled_at) === dateStr,
   );
   return {
     todo: todoTasks.length,
@@ -175,8 +192,9 @@ const calendarDays = computed(() => {
     const isFuture = dateStr > todayStr;
     const completionBase = counts.todo + counts.inProgress + counts.done;
     const isFullDone = !isFuture && completionBase > 0 && counts.done === completionBase;
+    const hasUpcomingTodo = isFuture && counts.todo > 0;
     const ratioText = isFuture
-      ? `待办 ${counts.todo}`
+      ? `${t('status.todo')} ${counts.todo}`
       : `${counts.done}/${completionBase}`;
     days.push({
       key: dateStr,
@@ -184,6 +202,7 @@ const calendarDays = computed(() => {
       day,
       ratioText,
       isFullDone,
+      hasUpcomingTodo,
       isCurrentMonth: true,
       isToday: dateStr === todayStr,
     });
@@ -214,7 +233,13 @@ const formatMonthValue = (date) => {
   return `${year}-${month}`;
 };
 
-const formatMonthLabel = (date) => `${date.getFullYear()}年${date.getMonth() + 1}月`;
+const monthKeys = ['month.jan', 'month.feb', 'month.mar', 'month.apr', 'month.may', 'month.jun', 'month.jul', 'month.aug', 'month.sep', 'month.oct', 'month.nov', 'month.dec'];
+
+const formatMonthLabel = (date) => {
+  const m = date.getMonth();
+  if (locale.value === 'en') return `${t(monthKeys[m])} ${date.getFullYear()}`;
+  return `${date.getFullYear()}年${t(monthKeys[m])}`;
+};
 
 const parseMonthValue = (value) => {
   const parts = value.split('-').map((item) => Number(item));
@@ -302,28 +327,16 @@ const onRoleChange = (event) => {
   void refresh();
 };
 
+const openPrompt = (type, title, placeholder, value = '') => {
+  promptType.value = type;
+  promptTitle.value = title;
+  promptPlaceholder.value = placeholder;
+  promptValue.value = value;
+  promptVisible.value = true;
+};
+
 const handleCreateRole = () => {
-  uni.showModal({
-    title: '新增角色',
-    editable: true,
-    placeholderText: '请输入角色名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await createRole(name);
-        await loadRoles();
-        const idx = roleOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) {
-          selectedRoleIndex.value = idx;
-          setRoleId(roleOptions.value[idx].value);
-        }
-      } catch {
-        uni.showToast({ title: '新增失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('role-create', '新增角色', '请输入角色名称');
 };
 
 const handleRenameRole = () => {
@@ -332,27 +345,7 @@ const handleRenameRole = () => {
     uni.showToast({ title: '请选择要重命名的角色', icon: 'none' });
     return;
   }
-  uni.showModal({
-    title: '重命名角色',
-    editable: true,
-    placeholderText: '请输入新名称',
-    success: async (res) => {
-      if (!res.confirm) return;
-      const name = (res.content || '').trim();
-      if (!name) return;
-      try {
-        await updateRole(current.value, name);
-        await loadRoles();
-        const idx = roleOptions.value.findIndex((item) => item.label === name);
-        if (idx >= 0) {
-          selectedRoleIndex.value = idx;
-          setRoleId(roleOptions.value[idx].value);
-        }
-      } catch {
-        uni.showToast({ title: '重命名失败', icon: 'none' });
-      }
-    },
-  });
+  openPrompt('role-rename', '重命名角色', '请输入新名称', current.label);
 };
 
 const handleDeleteRole = () => {
@@ -377,6 +370,40 @@ const handleDeleteRole = () => {
       }
     },
   });
+};
+
+const handlePromptConfirm = async (value) => {
+  const name = (value || '').trim();
+  if (!name) return;
+  if (promptType.value === 'role-create') {
+    try {
+      await createRole(name);
+      await loadRoles();
+      const idx = roleOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) {
+        selectedRoleIndex.value = idx;
+        setRoleId(roleOptions.value[idx].value);
+      }
+    } catch {
+      uni.showToast({ title: '新增失败', icon: 'none' });
+    }
+  }
+  if (promptType.value === 'role-rename') {
+    const current = roleOptions.value[selectedRoleIndex.value];
+    if (!current || current.value === null) return;
+    try {
+      await updateRole(current.value, name);
+      await loadRoles();
+      const idx = roleOptions.value.findIndex((item) => item.label === name);
+      if (idx >= 0) {
+        selectedRoleIndex.value = idx;
+        setRoleId(roleOptions.value[idx].value);
+      }
+    } catch {
+      uni.showToast({ title: '重命名失败', icon: 'none' });
+    }
+  }
+  promptType.value = '';
 };
 
 const openRoleManager = () => {
@@ -451,15 +478,21 @@ watch(currentMonth, () => {
   void refresh();
 });
 
+watch(locale, () => {
+  if (showMonthPicker.value) {
+    monthList.value = buildMonthList(currentMonth.value);
+  }
+});
+
 const loadRoles = async () => {
   try {
     const data = await fetchRoles();
     roleOptions.value = [
-      { label: '全部', value: null },
+      { label: t('role.all'), value: null },
       ...data.map((role) => ({ label: role.name, value: role.id })),
     ];
   } catch {
-    roleOptions.value = [{ label: '全部', value: null }];
+    roleOptions.value = [{ label: t('role.all'), value: null }];
   }
 };
 
@@ -478,6 +511,7 @@ const loadProfile = async () => {
 };
 
 onShow(async () => {
+  initLocale(); uni.setNavigationBarTitle({ title: t('nav.calendar') });
   if (!ensureAuth()) return;
   await loadProfile();
   await loadRoles();
@@ -495,6 +529,10 @@ onShow(async () => {
 </script>
 
 <style scoped>
+.card {
+  padding: 12px;
+}
+
 .page {
   padding: 10px;
   display: flex;
@@ -526,7 +564,7 @@ onShow(async () => {
 
 .welcome-user {
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .welcome-right {
@@ -549,22 +587,22 @@ onShow(async () => {
 .picker-input {
   padding: 4px 6px;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   font-size: 10px;
 }
 
 .role-manage {
   font-size: 10px;
-  color: var(--accent);
+  color: #b76e8a;
   padding: 2px 6px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
 }
 
 .label {
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   white-space: nowrap;
 }
 
@@ -586,29 +624,58 @@ onShow(async () => {
 }
 
 .month-actions .btn {
-  font-size: 12px;
-  padding: 6px 10px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 13px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  background: #fff;
+  color: #2b2430;
+  box-sizing: border-box;
+}
+
+.month-actions .btn.primary {
+  width: 46px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #b76e8a;
+  border-color: #b76e8a;
+  color: #fff;
 }
 
 .month-select {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .month-hint {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 10px;
+  color: #776b7f;
   white-space: nowrap;
 }
 
 .month-input {
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  font-size: 12px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .calendar-header {
@@ -616,7 +683,7 @@ onShow(async () => {
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
   font-size: 11px;
-  color: var(--muted);
+  color: #776b7f;
   margin-bottom: 8px;
 }
 
@@ -627,7 +694,7 @@ onShow(async () => {
 }
 
 .calendar-day {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 10px;
   padding: 4px 4px;
   text-align: center;
@@ -641,8 +708,18 @@ onShow(async () => {
   border-color: #b8e7cf;
 }
 
+.calendar-day.has-upcoming {
+  background: #fff3e0;
+  border-color: #ffb74d;
+}
+
+.calendar-day.has-upcoming.active {
+  background: #ffe0b2;
+  border-color: #f97316;
+}
+
 .calendar-day.full .ratio {
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .calendar-day.empty {
@@ -674,7 +751,7 @@ onShow(async () => {
 .ratio {
   display: block;
   font-size: 10px;
-  color: var(--muted);
+  color: #776b7f;
   margin-top: 2px;
 }
 
@@ -684,7 +761,7 @@ onShow(async () => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #776b7f;
   justify-content: center;
 }
 
@@ -692,7 +769,11 @@ onShow(async () => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--success);
+  background: #4e9f86;
+}
+
+.legend-dot.upcoming {
+  background: #ffb74d;
 }
 
 .modal-mask {
@@ -711,7 +792,7 @@ onShow(async () => {
   background: #fff;
   border-radius: 14px;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
 }
 
 .modal-header {
@@ -740,4 +821,6 @@ onShow(async () => {
   text-align: center;
   font-size: 13px;
 }
+.profile-link { color: #b76e8a; font-weight: 600; }
+.welcome-edit { margin-left: 4px; font-size: 13px; color: #b76e8a; }
 </style>

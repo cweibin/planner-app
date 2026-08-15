@@ -11,3 +11,15 @@ frontend/web/node_modules/
 
 frontend/mobile/node_modules/
 deploy/artifacts/
+
+# Secrets & local env
+backend/.env
+backend/venv/
+
+# Build artifacts / archives
+*.tar.gz
+
+# WeChat DevTools private config (per-machine)
+project.private.config.json
+frontend/mobile/project.private.config.json
+frontend/project.private.config.json

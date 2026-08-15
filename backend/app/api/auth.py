@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import Annotated
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,6 +12,7 @@ from ..core.auth import get_current_user
 from ..core.security import create_access_token, get_password_hash, verify_password
 from ..dependencies import get_db
 from ..models.user import User
+import httpx
 from ..schemas.auth import Token
 from ..schemas.user import UserCreate, UserRead, UserUpdate
 
@@ -42,6 +44,50 @@ def register_user(user_in: UserCreate, db: Annotated[Session, Depends(get_db)]):
     db.commit()
     db.refresh(user)
     return user
+
+
+class WeChatLoginRequest(BaseModel):
+    code: str
+
+
+@router.post("/wechat-login", response_model=Token)
+def wechat_login(payload: WeChatLoginRequest, db: Annotated[Session, Depends(get_db)]):
+    if not settings.WECHAT_APPID or not settings.WECHAT_APPSECRET:
+        raise HTTPException(status_code=500, detail="微信登录未配置")
+    try:
+        resp = httpx.get(
+            "https://api.weixin.qq.com/sns/jscode2session",
+            params={
+                "appid": settings.WECHAT_APPID,
+                "secret": settings.WECHAT_APPSECRET,
+                "js_code": payload.code,
+                "grant_type": "authorization_code",
+            },
+            timeout=10,
+        )
+        data = resp.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"微信服务调用失败: {exc}") from exc
+    openid = data.get("openid")
+    if not openid:
+        raise HTTPException(status_code=400, detail=data.get("errmsg", "微信登录失败"))
+    unionid = data.get("unionid")
+    user = db.query(User).filter(User.wechat_openid == openid).first()
+    if user is None:
+        user = User(
+            email=f"{openid}@wechat.local",
+            wechat_openid=openid,
+            unionid=unionid,
+            hashed_password=get_password_hash(secrets.token_hex(16)),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    return Token(access_token=access_token)
 
 
 @router.post("/login", response_model=Token)
@@ -83,6 +129,19 @@ def update_profile(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    if payload.email is not None and payload.email != current_user.email:
+        existing = (
+            db.query(User)
+            .filter(User.email == payload.email, User.id != current_user.id)
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该邮箱已被注册",
+            )
+        current_user.email = payload.email
+
     if payload.phone_number is not None:
         existing = (
             db.query(User)
@@ -95,6 +154,14 @@ def update_profile(
                 detail="Phone number already registered",
             )
         current_user.phone_number = payload.phone_number
+
+    if payload.new_password:
+        if len(payload.new_password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="密码至少 6 位",
+            )
+        current_user.hashed_password = get_password_hash(payload.new_password)
 
     db.commit()
     db.refresh(current_user)

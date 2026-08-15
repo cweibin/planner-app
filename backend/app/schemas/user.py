@@ -16,6 +16,7 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     is_active: bool
+    wechat_openid: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -24,4 +25,6 @@ class UserRead(UserBase):
 
 
 class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
+    new_password: Optional[str] = None

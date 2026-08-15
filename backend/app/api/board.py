@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -12,6 +12,14 @@ from ..models.user import User
 from ..schemas.task import TaskRead
 
 router = APIRouter(prefix="/api/board", tags=["board"])
+
+def _to_utc_naive(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    # 输入为北京时间的无时区时间时，换算到 UTC
+    return dt - timedelta(hours=8)
 
 
 @router.get("/tasks", response_model=Dict[str, List[TaskRead]])
@@ -43,6 +51,13 @@ def get_board_tasks(
             active_range_filters.append(
                 (Task.start_date <= due_to) & (Task.due_date >= due_from)
             )
+            active_range_filters.append(
+                (Task.start_date <= due_to)
+                & (or_(Task.due_date >= due_from, Task.due_date.is_(None)))
+            )
+            active_range_filters.append(
+                (Task.start_date.is_(None)) & (Task.due_date >= due_from)
+            )
         elif due_from is not None:
             active_range_filters.append(Task.start_date >= due_from)
             active_range_filters.append(Task.due_date >= due_from)
@@ -52,15 +67,17 @@ def get_board_tasks(
 
         done_range = None
         cancelled_range = None
-        if due_from is not None and due_to is not None:
-            done_range = Task.completed_at.between(due_from, due_to)
-            cancelled_range = Task.cancelled_at.between(due_from, due_to)
-        elif due_from is not None:
-            done_range = Task.completed_at >= due_from
-            cancelled_range = Task.cancelled_at >= due_from
-        elif due_to is not None:
-            done_range = Task.completed_at <= due_to
-            cancelled_range = Task.cancelled_at <= due_to
+        utc_from = _to_utc_naive(due_from)
+        utc_to = _to_utc_naive(due_to)
+        if utc_from is not None and utc_to is not None:
+            done_range = Task.completed_at.between(utc_from, utc_to)
+            cancelled_range = Task.cancelled_at.between(utc_from, utc_to)
+        elif utc_from is not None:
+            done_range = Task.completed_at >= utc_from
+            cancelled_range = Task.cancelled_at >= utc_from
+        elif utc_to is not None:
+            done_range = Task.completed_at <= utc_to
+            cancelled_range = Task.cancelled_at <= utc_to
 
         scoped_filters = []
         if active_range_filters:

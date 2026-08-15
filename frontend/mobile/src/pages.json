@@ -1,17 +1,17 @@
 {
   "pages": [
     {
-      "path": "pages/login/index",
+      "path": "pages/home/index",
       "style": {
-        "navigationBarTitleText": "登录",
+        "navigationBarTitleText": "今日概况",
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }
     },
     {
-      "path": "pages/home/index",
+      "path": "pages/login/index",
       "style": {
-        "navigationBarTitleText": "今日概况",
+        "navigationBarTitleText": "登录",
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }
@@ -36,6 +36,14 @@
       "path": "pages/task-create/index",
       "style": {
         "navigationBarTitleText": "新增任务",
+        "navigationBarBackgroundColor": "#fffdfd",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/voice-create/index",
+      "style": {
+        "navigationBarTitleText": "语音新建",
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }
@@ -71,10 +79,27 @@
         "navigationBarBackgroundColor": "#fffdfd",
         "navigationBarTextStyle": "black"
       }
+    },
+    {
+      "path": "pages/agreement/index",
+      "style": {
+        "navigationBarTitleText": "用户协议"
+      }
+    },
+    {
+      "path": "pages/privacy/index",
+      "style": {
+        "navigationBarTitleText": "隐私政策"
+      }
+    },
+    {
+      "path": "pages/complete-profile/index",
+      "style": {
+        "navigationBarTitleText": "完善资料"
+      }
     }
   ],
   "tabBar": {
-    "custom": true,
     "color": "#7a6b7f",
     "selectedColor": "#b76e8a",
     "backgroundColor": "#fffdfd",

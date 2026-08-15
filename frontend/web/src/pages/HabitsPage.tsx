@@ -1,11 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import { Habit, fetchHabits, createHabit, updateHabit, deleteHabit, checkInHabit, cancelCheckIn, fetchCheckIns, HabitCreate, HabitUpdate } from '../services/habits';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { formatBeijingTime, nowBeijing, toBeijing } from '../utils/time';
 
 export const HabitsPage: React.FC = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -15,7 +10,7 @@ export const HabitsPage: React.FC = () => {
   const [checkInDates, setCheckInDates] = useState<Record<number, Record<string, string>>>({});
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentWeekStart, setCurrentWeekStart] = useState(
-    dayjs().startOf('week').format('YYYY-MM-DD'),
+    nowBeijing().startOf('week').format('YYYY-MM-DD'),
   );
 
   const loadHabits = useCallback(async () => {
@@ -28,7 +23,8 @@ export const HabitsPage: React.FC = () => {
   }, [statusFilter]);
 
   const loadCheckIns = useCallback(async () => {
-    const weekStart = dayjs(currentWeekStart).startOf('week');
+    const baseWeek = toBeijing(currentWeekStart) ?? nowBeijing();
+    const weekStart = baseWeek.startOf('week');
     const start = weekStart.format('YYYY-MM-DD');
     const end = weekStart.endOf('week').format('YYYY-MM-DD');
     const checkInsMap: Record<number, Record<string, string>> = {};
@@ -37,9 +33,7 @@ export const HabitsPage: React.FC = () => {
         const checkIns = await fetchCheckIns(habit.id, start, end);
         const map: Record<string, string> = {};
         checkIns.forEach((c) => {
-          const time = c.check_in_time
-            ? dayjs.utc(c.check_in_time).tz('Asia/Shanghai').format('HH:mm')
-            : '';
+          const time = c.check_in_time ? formatBeijingTime(c.check_in_time) : '';
           map[c.check_in_date] = time;
         });
         checkInsMap[habit.id] = map;
@@ -69,8 +63,11 @@ export const HabitsPage: React.FC = () => {
     if (habit.status !== 'active') {
       return;
     }
-    if (habit.plan_end_date && dayjs().isAfter(dayjs(habit.plan_end_date), 'day')) {
-      return;
+    if (habit.plan_end_date) {
+      const planEnd = toBeijing(habit.plan_end_date);
+      if (planEnd && nowBeijing().isAfter(planEnd, 'day')) {
+        return;
+      }
     }
     const dates = checkInDates[habit.id] ?? {};
     const alreadyChecked = !!dates[date];
@@ -102,15 +99,19 @@ export const HabitsPage: React.FC = () => {
   };
 
   const getWeekDays = () => {
-    const start = dayjs(currentWeekStart).startOf('week');
+    const baseWeek = toBeijing(currentWeekStart) ?? nowBeijing();
+    const start = baseWeek.startOf('week');
     return Array.from({ length: 7 }, (_, idx) => {
       const date = start.add(idx, 'day').format('YYYY-MM-DD');
       return { date, day: start.add(idx, 'day').date() };
     });
   };
 
-  const isToday = (date: string) => date === dayjs().format('YYYY-MM-DD');
-  const isFuture = (date: string) => dayjs(date).isAfter(dayjs().format('YYYY-MM-DD'));
+  const isToday = (date: string) => date === nowBeijing().format('YYYY-MM-DD');
+  const isFuture = (date: string) => {
+    const target = toBeijing(date);
+    return target ? target.isAfter(nowBeijing(), 'day') : false;
+  };
 
   const getWeekTarget = (habit: Habit, weekDays: number) => {
     const raw = Number(habit.target_value ?? 0);
@@ -120,10 +121,10 @@ export const HabitsPage: React.FC = () => {
 
   const completedToday = habits.filter((h) => {
     const dates = checkInDates[h.id] ?? {};
-    return h.status === 'active' && !!dates[dayjs().format('YYYY-MM-DD')];
+    return h.status === 'active' && !!dates[nowBeijing().format('YYYY-MM-DD')];
   }).length;
   const totalActive = habits.filter((h) => h.status === 'active').length;
-  const weekHeaderStart = dayjs(currentWeekStart).startOf('week');
+  const weekHeaderStart = (toBeijing(currentWeekStart) ?? nowBeijing()).startOf('week');
   const weekHeaderEnd = weekHeaderStart.endOf('week');
   const weekHeaderLabel = `${weekHeaderStart.format('M月D日')} - ${weekHeaderEnd.format('M月D日')}`;
 
@@ -138,12 +139,13 @@ export const HabitsPage: React.FC = () => {
 
     activeHabits.forEach((habit) => {
       const dates = checkInDates[habit.id] ?? {};
-      const weekStart = dayjs(currentWeekStart).startOf('week');
+      const weekStart = (toBeijing(currentWeekStart) ?? nowBeijing()).startOf('week');
       const weekEnd = weekStart.endOf('week');
       const weekTarget = getWeekTarget(habit, 7);
 
       const weekCheckIns = Object.keys(dates).filter((d) => {
-        const current = dayjs(d);
+        const current = toBeijing(d);
+        if (!current) return false;
         return !current.isBefore(weekStart, 'day') && !current.isAfter(weekEnd, 'day');
       }).length;
 
@@ -208,7 +210,10 @@ export const HabitsPage: React.FC = () => {
           style={{ padding: '4px 8px', fontSize: 12 }}
           onClick={() =>
             setCurrentWeekStart(
-              dayjs(currentWeekStart).subtract(1, 'week').startOf('week').format('YYYY-MM-DD'),
+              (toBeijing(currentWeekStart) ?? nowBeijing())
+                .subtract(1, 'week')
+                .startOf('week')
+                .format('YYYY-MM-DD'),
             )
           }
         >
@@ -220,7 +225,10 @@ export const HabitsPage: React.FC = () => {
           style={{ padding: '4px 8px', fontSize: 12 }}
           onClick={() =>
             setCurrentWeekStart(
-              dayjs(currentWeekStart).add(1, 'week').startOf('week').format('YYYY-MM-DD'),
+              (toBeijing(currentWeekStart) ?? nowBeijing())
+                .add(1, 'week')
+                .startOf('week')
+                .format('YYYY-MM-DD'),
             )
           }
         >
@@ -237,10 +245,11 @@ export const HabitsPage: React.FC = () => {
         ) : (
           habits.map((habit) => {
             const dates = checkInDates[habit.id] ?? {};
-            const weekStart = dayjs(currentWeekStart).startOf('week');
+            const weekStart = (toBeijing(currentWeekStart) ?? nowBeijing()).startOf('week');
             const weekEnd = weekStart.endOf('week');
             const weekCheckIns = Object.keys(dates).filter((d) => {
-              const current = dayjs(d);
+              const current = toBeijing(d);
+              if (!current) return false;
               return !current.isBefore(weekStart, 'day') && !current.isAfter(weekEnd, 'day');
             }).length;
             const weekDays = 7;
@@ -314,7 +323,10 @@ export const HabitsPage: React.FC = () => {
                       const isHabitInactive =
                         habit.status !== 'active' ||
                         (habit.plan_end_date &&
-                          dayjs().isAfter(dayjs(habit.plan_end_date), 'day'));
+                          (() => {
+                            const planEnd = toBeijing(habit.plan_end_date);
+                            return planEnd ? nowBeijing().isAfter(planEnd, 'day') : false;
+                          })());
                       const canCheck = !isHabitInactive && !isFuture(item.date);
                       const checkTime = isChecked ? dates[item.date] || '' : '';
                       const baseBackground = isHabitInactive

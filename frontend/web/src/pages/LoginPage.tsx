@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login, setAccessToken } from '../services/apiClient';
+import { isBeijingTimezone } from '../utils/time';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ export const LoginPage: React.FC = () => {
     try {
       const res = await login(username, password);
       setAccessToken(res.access_token);
+      if (!isBeijingTimezone()) {
+        window.alert('检测到系统时区非北京时间，系统将按北京时间显示。');
+      }
       navigate('/');
     } catch (err) {
       setError('登录失败，请检查账号或密码');

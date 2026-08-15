@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev:h5": "uni dev -p h5",
-    "build:h5": "uni build -p h5"
+    "build:h5": "uni build -p h5",
+    "build:mp-weixin": "uni build -p mp-weixin"
   },
   "dependencies": {
     "vue": "^3.4.0"
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@dcloudio/uni-app": "vue3",
     "@dcloudio/uni-h5": "vue3",
+    "@dcloudio/uni-mp-weixin": "^3.0.0-alpha-5000120260211001",
     "@dcloudio/vite-plugin-uni": "vue3",
     "vite": "^5.2.0"
   }

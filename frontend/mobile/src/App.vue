@@ -19,31 +19,23 @@ export default {
 </script>
 
 <style>
-:root {
-  --bg: #f7f1f5;
-  --surface: #fffdfd;
-  --text: #2b2430;
-  --muted: #776b7f;
-  --accent: #b76e8a;
-  --accent-2: #7b8db8;
-  --success: #4e9f86;
-  --line: rgba(110, 95, 116, 0.4);
-  --radius: 18px;
-  --shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-lg: 16px;
-  --spacing-xl: 20px;
-  --font-title: 22px;
-  --font-subtitle: 16px;
-  --font-body: 14px;
-  --font-small: 12px;
+/* mp-weixin <button> 默认带灰色背景和 ::after 边框，会盖过 .btn 自定义样式。
+   这里统一重置，让 .btn 类完全控制外观。 */
+button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+  border-radius: 0;
+}
+button::after {
+  border: none;
 }
 
 page {
-  background: var(--bg);
-  color: var(--text);
+  background: #f7f1f5;
+  color: #2b2430;
   font-family: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
@@ -51,46 +43,46 @@ page {
 
 .card {
   background: #fff;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow);
+  border: 1px solid rgba(110, 95, 116, 0.4);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 22px rgba(70, 48, 78, 0.12);
 }
 
 .section-title {
-  font-size: var(--font-body);
+  font-size: 14px;
   font-weight: 700;
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 12px;
 }
 
 .btn {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   border-radius: 12px;
   padding: 8px 12px;
-  font-size: var(--font-body);
+  font-size: 14px;
   font-weight: 600;
   background: #fff;
-  color: var(--text);
+  color: #2b2430;
 }
 
 .btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #b76e8a;
+  border-color: #b76e8a;
   color: #fff;
 }
 
 .chip {
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: var(--font-small);
-  border: 1px solid var(--line);
+  font-size: 12px;
+  border: 1px solid rgba(110, 95, 116, 0.4);
   background: #fff;
-  color: var(--muted);
+  color: #776b7f;
 }
 
 .chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #b76e8a;
+  border-color: #b76e8a;
   color: #fff;
 }
 

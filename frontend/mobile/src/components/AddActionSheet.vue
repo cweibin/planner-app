@@ -56,7 +56,7 @@ onUnmounted(() => {
   margin-bottom: calc(14px + env(safe-area-inset-bottom));
   background: #fff;
   border-radius: 16px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(110, 95, 116, 0.4);
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
@@ -65,14 +65,14 @@ onUnmounted(() => {
   padding: 14px 16px;
   text-align: center;
   font-size: 14px;
-  color: var(--text);
-  border-bottom: 1px solid var(--line);
+  color: #2b2430;
+  border-bottom: 1px solid rgba(110, 95, 116, 0.4);
 }
 
 .sheet-cancel {
   padding: 14px 16px;
   text-align: center;
   font-size: 14px;
-  color: var(--muted);
+  color: #776b7f;
 }
 </style>

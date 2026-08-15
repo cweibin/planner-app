@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
+import { formatBeijingDate } from '../utils/time';
 import {
   fetchTaskStatistics,
   fetchOverviewStatistics,
@@ -200,7 +200,7 @@ export const StatisticsPage: React.FC = () => {
           {timeStats?.data.map((item) => (
             <div key={item.date} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ width: 100, fontSize: 13, color: '#666' }}>
-                {dayjs(item.date).format('MM-DD')}
+                {formatBeijingDate(item.date, 'MM-DD')}
               </span>
               <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
                 <div
@@ -290,7 +290,7 @@ export const StatisticsPage: React.FC = () => {
                         />
                       </div>
                       <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
-                        {dayjs(item.date).format('MM-DD')}
+                        {formatBeijingDate(item.date, 'MM-DD')}
                       </div>
                     </div>
                   );
@@ -341,7 +341,7 @@ export const StatisticsPage: React.FC = () => {
                         />
                       </div>
                       <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
-                        {dayjs(item.date).format('MM-DD')}
+                        {formatBeijingDate(item.date, 'MM-DD')}
                       </div>
                     </div>
                   );

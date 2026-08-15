@@ -6,6 +6,8 @@
 
 <script setup>
 import { computed } from 'vue';
+import { t } from '../locale';
+import { requireAuth } from '../utils/auth';
 const props = defineProps({
   disable: { type: Boolean, default: false },
 });
@@ -19,12 +21,24 @@ const isHidden = computed(() => props.disable || getCurrentRoute() === 'pages/st
 
 const openAdd = () => {
   if (isHidden.value) return;
+  if (!requireAuth()) return;
   const current = getCurrentRoute();
   if (current === 'pages/habits/index') {
     uni.navigateTo({ url: '/pages/habit-create/index' });
     return;
   }
-  uni.navigateTo({ url: '/pages/task-create/index' });
+  uni.showActionSheet({
+    itemList: [t('add.direct'), t('add.voice')],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        uni.navigateTo({ url: '/pages/task-create/index' });
+        return;
+      }
+      if (res.tapIndex === 1) {
+        uni.navigateTo({ url: '/pages/voice-create/index' });
+      }
+    },
+  });
 };
 </script>
 
