@@ -43,7 +43,7 @@
           v-for="day in calendarDays"
           :key="day.key"
           class="calendar-day"
-          :class="{ active: day.date === selectedDate, today: day.isToday, full: day.isFullDone, empty: !day.isCurrentMonth }"
+          :class="{ active: day.date === selectedDate, today: day.isToday, full: day.isFullDone, 'has-upcoming': day.hasUpcomingTodo, empty: !day.isCurrentMonth }"
           @click="handleDaySelect(day)"
         >
           <template v-if="day.isCurrentMonth">
@@ -55,6 +55,10 @@
       <view class="legend">
         <text class="legend-dot" />
         <text class="legend-text">{{ t('calendar.legend') }}</text>
+      </view>
+    <view class="legend">
+        <text class="legend-dot upcoming" />
+        <text class="legend-text">{{ t('calendar.legend.upcoming') }}</text>
       </view>
     </view>
 
@@ -188,6 +192,7 @@ const calendarDays = computed(() => {
     const isFuture = dateStr > todayStr;
     const completionBase = counts.todo + counts.inProgress + counts.done;
     const isFullDone = !isFuture && completionBase > 0 && counts.done === completionBase;
+    const hasUpcomingTodo = isFuture && counts.todo > 0;
     const ratioText = isFuture
       ? `${t('status.todo')} ${counts.todo}`
       : `${counts.done}/${completionBase}`;
@@ -197,6 +202,7 @@ const calendarDays = computed(() => {
       day,
       ratioText,
       isFullDone,
+      hasUpcomingTodo,
       isCurrentMonth: true,
       isToday: dateStr === todayStr,
     });
@@ -702,6 +708,16 @@ onShow(async () => {
   border-color: #b8e7cf;
 }
 
+.calendar-day.has-upcoming {
+  background: #fff3e0;
+  border-color: #ffb74d;
+}
+
+.calendar-day.has-upcoming.active {
+  background: #ffe0b2;
+  border-color: #f97316;
+}
+
 .calendar-day.full .ratio {
   color: #776b7f;
 }
@@ -754,6 +770,10 @@ onShow(async () => {
   height: 8px;
   border-radius: 50%;
   background: #4e9f86;
+}
+
+.legend-dot.upcoming {
+  background: #ffb74d;
 }
 
 .modal-mask {

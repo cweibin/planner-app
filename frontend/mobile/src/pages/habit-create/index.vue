@@ -1,6 +1,7 @@
 <template>
   <view class="page">
     <LogoutButton />
+    <FloatingAddButton :disable="false" />
     <view class="card">
       <text class="section-title">{{ isEditing ? t('habit.edit.title') : t('habit.create.title') }}</text>
       <view class="form-field">
@@ -70,13 +71,11 @@ import { requireAuth } from '../../utils/auth';
 import { createHabit, fetchHabit, updateHabit } from '../../services/habits';
 import { formatDate } from '../../utils/date';
 import LogoutButton from '../../components/LogoutButton.vue';
+import FloatingAddButton from '../../components/FloatingAddButton.vue';
+import { t, initLocale } from '../../locale';
 
 const name = ref('');
 const description = ref('');
-const targetTypeOptions = [
-  { label: t('every.day'), value: 'daily' },
-  { label: t('every.week'), value: 'weekly' },
-];
 const targetTypeIndex = ref(0);
 const targetCountOptions = Array.from({ length: 20 }, (_, idx) => idx + 1);
 const targetCountIndex = ref(0);
@@ -88,7 +87,12 @@ const descFocus = ref(false);
 const habitId = ref(null);
 const isEditing = ref(false);
 
-const targetTypeLabel = computed(() => targetTypeOptions[targetTypeIndex.value]?.label ?? '每天');
+const targetTypeOptions = computed(() => [
+  { label: t('every.day'), value: 'daily' },
+  { label: t('every.week'), value: 'weekly' },
+]);
+
+const targetTypeLabel = computed(() => targetTypeOptions.value[targetTypeIndex.value]?.label ?? t('every.day'));
 
 const onTargetTypeChange = (event) => {
   targetTypeIndex.value = Number(event.detail.value);
@@ -163,7 +167,7 @@ const submit = async () => {
     const payload = {
       name: trimmed,
       description: description.value.trim() || null,
-      target_type: targetTypeOptions[targetTypeIndex.value]?.value || 'daily',
+      target_type: targetTypeOptions.value[targetTypeIndex.value]?.value || 'daily',
       target_count: Math.floor(count),
     };
     if (planStart.value) payload.plan_start_date = planStart.value;
@@ -191,7 +195,7 @@ const loadHabit = async () => {
     const habit = await fetchHabit(habitId.value);
     name.value = habit?.name || '';
     description.value = habit?.description || '';
-    const typeIdx = targetTypeOptions.findIndex((item) => item.value === habit?.target_type);
+    const typeIdx = targetTypeOptions.value.findIndex((item) => item.value === habit?.target_type);
     targetTypeIndex.value = typeIdx >= 0 ? typeIdx : 0;
     const count = Number(habit?.target_value ?? habit?.target_count ?? 1);
     const countIdx = targetCountOptions.findIndex((v) => v === count);
