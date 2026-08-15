@@ -92,16 +92,15 @@ def time_statistics(
         .group_by(func.date(Task.completed_at + timedelta(hours=8)))
         .all()
     )
-    # 未完成任务：按截止日期统计（+8h 转北京时间）
-    pending_rows = (
-        db.query(func.date(Task.due_date + timedelta(hours=8)), func.count(Task.id))
+    # 未完成任务（累积）：一次性拉取当前所有待办/进行中的任务，
+    # 在 Python 中按天计算"截止日 ≤ 那天 且 开始日 ≤ 那天"的累积数量
+    pending_tasks = (
+        db.query(Task.start_date, Task.due_date)
         .filter(
             Task.owner_id == current_user.id,
             Task.due_date.isnot(None),
             Task.status.in_([TaskStatus.todo, TaskStatus.in_progress]),
-            func.date(Task.due_date + timedelta(hours=8)) >= start_date,
         )
-        .group_by(func.date(Task.due_date + timedelta(hours=8)))
         .all()
     )
 
@@ -117,16 +116,24 @@ def time_statistics(
     )
 
     done_by_date: Dict[str, int] = {str(d): c for d, c in done_rows}
-    pending_by_date: Dict[str, int] = {str(d): c for d, c in pending_rows}
     habits_by_date: Dict[str, int] = {str(d): c for d, c in habit_rows}
 
-    # 连续填充范围内的每一天（无数据补 0），保证日期对齐、数量正确
     timeline: List[Dict[str, object]] = []
     for i in range(days):
         day = start_date + timedelta(days=i)
         key = day.isoformat()
         done = done_by_date.get(key, 0)
-        pending = pending_by_date.get(key, 0)
+        # 累积未完成：截止日 ≤ 当天 且 (开始日为空 或 开始日 ≤ 当天)
+        pending = 0
+        for t in pending_tasks:
+            due_day = (t.due_date + timedelta(hours=8)).date() if t.due_date else None
+            if due_day is None or due_day > day:
+                continue
+            if t.start_date is not None:
+                start_day = (t.start_date + timedelta(hours=8)).date()
+                if start_day > day:
+                    continue
+            pending += 1
         timeline.append(
             {
                 "date": key,
