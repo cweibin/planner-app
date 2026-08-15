@@ -124,13 +124,14 @@ def time_statistics(
         key = day.isoformat()
         done = done_by_date.get(key, 0)
         # 累积未完成：截止日 ≤ 当天 且 (开始日为空 或 开始日 ≤ 当天)
+        # due_date/start_date 存储为北京时间(naive)，无需 +8h
         pending = 0
         for t in pending_tasks:
-            due_day = (t.due_date + timedelta(hours=8)).date() if t.due_date else None
+            due_day = t.due_date.date() if t.due_date else None
             if due_day is None or due_day > day:
                 continue
             if t.start_date is not None:
-                start_day = (t.start_date + timedelta(hours=8)).date()
+                start_day = t.start_date.date()
                 if start_day > day:
                     continue
             pending += 1
